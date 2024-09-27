@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ambigram</title>
+        <style>
+            html, body {
+                overflow:hidden;
+                width:100%;
+                height:100%;
+                margin:0;
+                padding:0;
+            }
+            
+        </style>
+        <script src="../common.js"></script>
+        <script src="main.js"></script>
+        <style>
+            #content {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+            }
+            img.dynamic {
+                max-width: 75%;
+                height: auto;
+            }
+            img#symmetry {
+                transition-duration: 1s;
+            }
+            #credit {
+                position:absolute;
+                bottom:-1em;
+                right:0px;
+            }
+            #credit p {
+                transform: translate(-100%,0);
+                font-style:italic;
+                color:gray;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content">
+            <img id="symmetry" class="dynamic" src="symmetry_ambigram.png"/>
+            <div id="credit">
+                <p>by John Langdon</p>
+            </div>
+        </div>        
+    </body>
+</html>

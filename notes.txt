@@ -1,0 +1,17 @@
+Intro:
+Mura, pavimenti e soffitti spesso richiedono di essere ricoperti e/o decorati
+Le piastrelle o i mattoni è comodo che siano della stessa forma
+o di poche forme diverse, quindi il problema
+è come ricoprire regioni di piano arbitrariamente grandi
+(in principio infinite) usando pochi tipi di piastrelle
+che non si devono sovrapporre e non devono lasciare spazi vuoti
+
+Gli esempi più antichi di tiling risalgono a 4000 anni fa 
+quindi è tanto tempo che facciamo questo gioco e siamo 
+diventati bravini.
+
+Il convegno è sulla simmetria e sull'asimmetria e in 
+questa conferenza vedremo come si fa a tassellare il piano 
+usano la simmetria come strumento, ma vedremo anche come 
+è possibile usare altri strumenti e creare tassellazioni 
+non simmetriche 
