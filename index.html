@@ -9,6 +9,7 @@
 		<link rel="stylesheet" href="reveal/reset.css">
 		<link rel="stylesheet" href="reveal/reveal.css">
 		<link rel="stylesheet" href="reveal/theme/white.css">
+		<link rel="stylesheet" href="style.css">
 
 		<!-- Theme used for syntax highlighted code -->
 		<!--link rel="stylesheet" href="plugin/highlight/monokai.css"-->
@@ -25,7 +26,34 @@
                     data-background-interactive>
                 </section>
 				<section >
-                    <img class="stretch" src="images/lake.jpg"/>
+                    <section><img class="stretch" src="images/lake.jpg"/></section>
+                    <section><img class="stretch" src="images/rosone-fermo.png"/></section>
+                    <section><iframe class="stretch" src="pages/regular-tiling/index.html"></iframe></section>
+                    <section><img class="stretch" src="images/horses.png"/></section>
+                    <section>
+                        <img src="images/smaller_and_smaller.png" class="r-stretch">
+                        <p class="caption">Smaller & Smaller, M.C.Escher, 1956 </p>
+                    </section>
+                    <section>
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/fal3UzXbFi4?si=1VVSCS1QFN1m4Jr0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+                    </section>
+                </section>
+				<section data-background-iframe="pages/three-mirrors/index.html"
+                    data-background-interactive>
+                </section>
+                <section>
+                    <img src="images/17-wallpaper-groups.png" class="stretch"/>
+                </section>
+                <section>
+                    <div class="r-stretch" style="display:flex; gap:20px">
+                        <img src="images/pgg-1.jpg" />
+                        <img src="images/pgg-2.jpg" />    
+                    </div>
+                </section>
+                <section data-background-iframe="pages/wallpapers/index.html"
+                    data-background-interactive>
+
                 </section>
 				<section>
                     <h2>Sono qui</h2>
@@ -45,8 +73,7 @@
 			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
-
-				// Learn about plugins: https://revealjs.com/plugins/
+                // Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ ] // RevealMarkdown, RevealHighlight, RevealNotes ]
 			});
 		</script>

@@ -126,16 +126,8 @@ class GroupControlPanel {
         let description = this.description = document.createElement('p');
         description.classList.add('description');
         body.appendChild(description);
-        description.innerHTML = "sigh";
+        // description.innerHTML = "sigh";
 
-        let examplesTitle = document.createElement('H2');
-        examplesTitle.innerHTML = "Esempi:";
-        body.appendChild(examplesTitle);
-
-        let examples = this.examples = document.createElement('div');
-        examples.classList.add("examples");
-        examples.setAttribute('id','examples');
-        body.appendChild(examples);
 
         const me = this;
         groupMenu.onchange = ()=>{
@@ -177,13 +169,6 @@ class GroupControlPanel {
     refresh(groupName) {
         // this.description.innerHTML = "Descrizione del gruppo " + groupName;
         let info = groupsData[groupName];
-        if(info && info.exampleCount>0) {
-            this.examples.innerHTML = [...Array(info.exampleCount).keys()]
-                .map(i=>`<img src="${assetFolder}/${groupName.toLowerCase()}_${i+1}.png"/>`)
-                .join(" ");
-        } else {
-            this.examples.innerHTML = "";
-        }
         
         this.description.innerHTML = "";
         let group = getGroup(groupName);
