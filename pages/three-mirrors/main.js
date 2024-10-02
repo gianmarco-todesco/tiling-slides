@@ -2,382 +2,254 @@ const slide = {
     name:"three-mirrors"    
 }
 
-let p1,p2;
-let matrix;
+let imageLayer, mirrorLayer, dotLayer;
 
-let fillLayer, strokeLayer, mirrorLayer;
+class MovingDot {
+    constructor(options) {
+        const color = options.color || 'red';
+        const cb = options.callback;
+        const dot = this.asset = new PIXI.Graphics()
+            .circle(0, 0, 10)
+            .fill(color)
+            .stroke({color:'black', width:1})
+        dot.eventMode = 'dynamic';
+        dot.cursor = 'pointer';
+        let dragOffset = new PIXI.Point(0,0);
+        dot.onpointerdown = function(e) {  
+            this.position.subtract(e.global, dragOffset)
+            function onDrag(e) {
+                e.global.add(dragOffset, dot.position);
+                if(cb) cb(dot.position);
+            } 
+            function dragEnd(e) {
+                app.stage.off('globalpointermove', onDrag)
+                app.stage.off('pointerup', dragEnd)
+                app.stage.off('pointerupoutside', dragEnd)
+            }
+            app.stage.on('globalpointermove', onDrag)
+            app.stage.on('pointerup', dragEnd)
+            app.stage.on('pointerupoutside', dragEnd)
+        }
+        dotLayer.addChild(dot);
+    }
+}
 
 class Mirror {
-    constructor(x0,y0,angle) {
-        
-        let p0 = new paper.Point(x0,y0);
-        let phi = Math.PI*angle/180.0;
-        let d = new paper.Point(Math.cos(phi), Math.sin(phi));        
-        mirrorLayer.activate();
-        let line = new paper.Path();
-        line.moveTo(p0.add(d.multiply(1000))); 
-        line.lineTo(p0.add(d.multiply(-1000)));
-        line.strokeColor = 'black';
-        line.strokeWidth = 5;
-        this.line = line;       
+    constructor(p, angle) {
+        let rad = angle * Math.PI/180;
+        let p0 = new PIXI.Matrix().rotate(rad).apply(new PIXI.Point(1000,0));
+        let p1 = new PIXI.Point(-p0.x,-p0.y);
+        let line = this.line = new PIXI.Graphics()
+        .moveTo(p0.x,p0.y)
+        .lineTo(p1.x,p1.y)
+        .stroke({color:'black', width:4});
+        line.position.set(p.x,p.y)
+        mirrorLayer.addChild(line);
 
-        
-        this.matrix = new paper.Matrix().rotate(angle,p0).scale(1,-1,p0).rotate(-angle,p0);
+        this.matrix = new PIXI.Matrix().translate(-p.x,-p.y).rotate(-rad).scale(1,-1)
+            .rotate(rad).translate(p.x,p.y)
+    }
+    destroy() {
+        this.line.destroy();
     }
 }
 
-class Shape {
+class MirrorBox {
     constructor() {
-        this.fillSymbols = [];
-        this.strokeSymbols = [];
+        const myRenderTexture = PIXI.RenderTexture.create({width:256, height:256, autoGenerateMipmaps:true});
+
+        const txt = new PIXI.Text('Fermhamente', {
+            fontFamily: 'Arial',
+            fontSize: 36,
+            fill: 0xffffff, // Colore del testo (bianco)
+            align: 'center',
+        });
+
+        // do some rendering..
+        app.renderer.render({target:myRenderTexture, container:txt});
+
+        // now refresh mipmaps when you are ready
+        myRenderTexture.source.updateMipmaps();
+
+        
+        let gc = this.gc = new PIXI.GraphicsContext()
+        .rect(-20, -50, 40, 100)
+        .fill("orange")
+        .texture(myRenderTexture)
+        this.instances = [];
+        this.pool = [];    
+        this.seedMatrix = new PIXI.Matrix();
         this.matrices = [];
     }
-    add(fillShape, strokeShape, matrix = new paper.Matrix()) {
-        this.fillSymbols.push(new paper.Symbol(fillShape));
-        this.strokeSymbols.push(new paper.Symbol(strokeShape));
-        this.matrices.push(matrix)
-    }
 
-    place(matrix) {
-        fillLayer.activate();
-        this.fillSymbols.forEach(s=>{
-            let v = s.place();
-            v.applyMatrix = false;
-            v.matrix = matrix.clone();
-        });
-        strokeLayer.activate();
-        this.strokeSymbols.forEach(s=>{
-            let v = s.place();
-            v.applyMatrix = false;
-            v.matrix = matrix.clone();
-        });
-
-    }
-}
-
-function placeSymbol(symbol, matrix) {
-    let itm = symbol.place();
-    itm.applyMatrix = false;
-    itm.matrix = matrix.clone();
-    return itm;
-}
-
-class ShapeGroup {
-    constructor(shape, matrices) {
-        this.shape = shape;
-        this.fillItems = [];
-        this.strokeItems = [];
-        this._createItems(matrices);
-    }
-    _createItems(matrices) {
-        fillLayer.activate();
-        const fillItems = this.fillItems;
-        const strokeItems = this.strokeItems;
-        const shapeMatrices = this.shape.matrices;
-        matrices.forEach(matrix => {
-            shape.fillSymbols.forEach((s,i)=> {
-                let itmMatrix = matrix.clone().append(shapeMatrices[i]);
-                let itm = placeSymbol(s, itmMatrix);
-                fillItems.push(itm);
-                itm.data.shapeIndex = i;
-                itm.data.matrix = matrix;
-            });
-        });
-        strokeLayer.activate();
-        matrices.forEach(matrix => {
-            shape.strokeSymbols.forEach((s,i)=> {
-                let itmMatrix = matrix.clone().append(shapeMatrices[i]);
-                let itm = placeSymbol(s, itmMatrix);
-                strokeItems.push(itm);
-                itm.data.shapeIndex = i;
-                itm.data.matrix = matrix;
-            });
-        });
-    } 
-    setMatrices(matrices) {
-        this.fillItems.forEach(itm=>itm.remove());
-        this.strokeItems.forEach(itm=>itm.remove());
-        this.fillItems.length = 0;
-        this.strokeItems.length = 0;
-        this._createItems(matrices);
-    }
-}
-
-function foo(baseMatrix) {
-    /*
-    let matrices = []
-    for(let i=-20;i<20;i++) {
-        for(let j=-20;j<20; j++) {
-            matrices.push(new paper.Matrix().translate(100*j,100*i).append(baseMatrix))
-        }
-    }
-    shapeGroup.setMatrices(matrices);
-    */
-    if(shapeGroup.fillItems.length < 10) {
-        let matrices = []
-        for(let i=-20;i<20;i++) {
-            for(let j=-20;j<20; j++) {
-                matrices.push(new paper.Matrix().translate(100*j,100*i).append(baseMatrix))
+    setInstances(matrices) {
+        let n = matrices.length;
+        const instances = this.instances;
+        if(n>instances.length) {
+            let m = Math.min(this.pool.length, n-instances.length);
+            for(let i=0; i<m; i++) {
+                let itm = this.pool.pop();
+                itm.visible = true;
+                instances.push(itm);
+            }
+            m = n - instances.length;
+            for(let i=0; i<m; i++) {
+                let itm = new PIXI.Graphics(this.gc);
+                imageLayer.addChild(itm);
+                instances.push(itm);
             }
         }
-        shapeGroup.setMatrices(matrices);    
-    } else {
-        let k = 0;
-        for(let i=-20;i<20;i++) {
-            for(let j=-20;j<20; j++) {
-                let mat = new paper.Matrix().translate(100*j,100*i).append(baseMatrix);
-                shapeGroup.fillItems[k].matrix = mat;
-                shapeGroup.strokeItems[k].matrix = mat;
-                k++;
-                
-            }
-        }
-    }
-}
-function uff() {
-    let k = 0;
-    for(let i=-20;i<20;i++) {
-        for(let j=-20;j<20; j++) {
-            for(let t=0; t<2;t++) {
-                let mat = new paper.Matrix().translate(100*j,100*i).append(shapeGroup.shape.matrices[t]);
-                shapeGroup.fillItems[k].matrix = mat;
-                shapeGroup.strokeItems[k].matrix = mat;    
-                k++;
-            }
-            
-        }
-    }
-}
-
-function createSeedShape() {    
-    let letter = new paper.PointText();
-    letter.fontSize = 90;
-    letter.fontWeight = "bold"
-    letter.content = "R";
-    letter.fillColor = "red";
-    let letterOutline = letter.clone();
-    letterOutline.fillColor = "transparent";
-    letterOutline.strokeColor = "black";
-    letterOutline.strokeWidth = 3;
-    let shape = new Shape();
-    shape.add(letter, letterOutline);
-
-    let dot = paper.Path.Circle({ radius: 20, fillColor:"red" });
-    let dotOutline = dot.clone();
-    dotOutline.fillColor = "transparent";
-    dotOutline.strokeColor = "black";
-    shape.add(dot, dotOutline, new paper.Matrix().translate(0,-100));
-    return shape;
-}
-
-let mirror;
-let shape;
-let shapeGroup;
-
-function setup() {
-    paper.setup('myCanvas');
-    with(paper) {
-
-        view.setCenter(new Point(0,0))
-        fillLayer = new Layer();
-        strokeLayer = new Layer();
-        mirrorLayer = new Layer();
-
-        mirror = new Mirror(0,0,30);
-
-        let matrix = new paper.Matrix().translate(30,-30);
-        shape = createSeedShape();
-
-
-        shapeGroup = new ShapeGroup(shape, [
-            matrix,
-            mirror.matrix.clone().append(matrix),
-            new paper.Matrix().scale(-1,1).append(mirror.matrix).append(matrix), 
-        ])
-        foo(new paper.Matrix());
-
-        shapeGroup.fillItems.forEach(itm => {
-            itm.onMouseDrag = function(e) {
-                let matrix = new paper.Matrix().translate(e.delta);
-                let i = itm.data.shapeIndex;
-                shapeGroup.shape.matrices[i] = shapeGroup.shape.matrices[i].append(matrix);
-                uff()
-                // console.log(matrix);
-            }
+        matrices.forEach((mat,i) => {
+            let itm = instances[i];
+            itm.setFromMatrix(mat);
         })
-
-        mirrorLayer.activate();
-        let dot1 = Path.Circle({
-            radius: 10,
-            center: view.center,
-            fillColor:"blue"
-        });
-        let dot2 = dot1.clone();
-        dot2.fillColor = "cyan"
-        dot2.onMouseDrag = function(e) {
-            let p = e.point;
-            this.position.set(p);
-            dot1.position.set(mirror.matrix.transform(p))
+        while(instances.length > matrices.length) {
+            let itm = instances.pop();
+            itm.visible = false;
+            this.pool.push(itm);
         }
+    }
+    destroyInstances() {
+        this.instances.forEach(itm => itm.destroy());
+        this.pool.forEach(itm => itm.destroy());
+        this.instances.length = 0;
+        this.pool.length = 0;
+    }
+    
+    _update() {
+        const seedMatrix = this.seedMatrix;
+        let matrices = this.matrices.map(mat => mat.clone().append(seedMatrix));
+        this.setInstances(matrices);
+    }
+    setSeedMatrix(seedMatrix) {
+        this.seedMatrix = seedMatrix;
+        this._update();
+    }
+    setMirrorMatrices(matrices) {
+        this.matrices = matrices;
+        this._update();
+    }
+}
 
-        paper.view.onFrame = function(e) {
-            // foo(new paper.Matrix().rotate(performance.now()*0.1))
-        }
-        /*
-        LayerLayer 
-        let layer = new Layer();
-        let layer2 = new Layer();
-        layer2.activate();
+let mirrorBox;
+let mirrors = [];
 
-        let line = new Path();
-        line.moveTo(-800,0); line.lineTo(800,0);
-        line.strokeColor = 'black';
-        line.strokeWidth = 5;
-        
-        project.layers[0].activate();
-
-        let dot = Path.Circle({
-            radius: 100,
-            center: view.center,
-            fillColor:"red"
-        });
-        dot.position.set(0,200)
-        let letter = createSeedShape();
-        letter.fillColor = "red";
-        let letterOutline = letter.clone();
-        let s1 = new Symbol(letter);
-        
-        letterOutline.strokeColor = "black";
-        letterOutline.strokeWidth = 3;
-        letterOutline.fillColor = "transparent";
-        let s2 = new Symbol(letterOutline);
-        
-        s1.place()
-        s1.place(30,30)
-        
-        s2.place()
-        s2.place(30,30)
-*/
+function set_2_60(mirror1, mirror2) {
+    let m1 =  mirror1.matrix, m2 = mirror2.matrix;
+    let rot = m2.clone().append(m1);
+    let matrices = [new PIXI.Matrix(), m1];
+    for(let i=2; i<6; i++) {
+        matrices.push(rot.clone().append(matrices[i-2]));
+    }
+    mirrorBox.setMirrorMatrices(matrices);
+}
 
 
-        /*
-        let size = 50;
-
-        let start = performance.now();
-
-        let rect = new Path.Rectangle([-size/2, -size/2], [size, size]);
-        rect.strokeColor = new Color(0.8,0.9,0.9);
-        rect.strokeWidth = 5;
-        rect.fillColor = new Color(0.85,0.95,0.98);
-        
-        let rect2 = new Path.Rectangle([-size/2, -size/2], [size, size]);
-        rect2.fillColor = new Color(0.85,0.35,0.38);
-        let text2 = new PointText(new Point(-30, 30));
-        text2.fillColor = 'black';
-        text2.content = "Carola";
-        text2.fontSize = "20px";
-        let g2 = new Group([rect2, text2]);
-        g2.applyMatrix = false;
-
-
-
-        let text = new PointText(new Point(-30, 30));
-        text.fillColor = 'black';
-        text.content = "Carola";
-        text.fontSize = "20px";
-
-        let g = new Group([rect, text]);
-
-
-        
-        let s = new Symbol(g);
-
-        let transformations = [];
-        matrix = new Matrix();
-        matrix.translate(400,400);
-        matrix.scale(1,-1);
-        matrix.translate(-400,-400);
-
-        let matrix2 = new Matrix();
-        matrix2.translate(400,400);
-        matrix2.rotate(120)
-        matrix2.scale(1,-1);
-        matrix2.rotate(-120)
-        matrix2.translate(-400,-400);
-
-        let matrix3 = new Matrix();
-        matrix3.translate(600,400);
-        matrix3.rotate(-120)
-        matrix3.scale(1,-1);
-        matrix3.rotate(120)
-        matrix3.translate(-600,-400);
-
-        let symbols = []
-        symbols.push([matrix,s.place(new Point(0,0))])
-        symbols.push([matrix2,s.place(new Point(0,0))])
-        symbols.push([matrix.clone().append(matrix2),s.place(new Point(0,0))])
-        symbols.push([matrix2.clone().append(matrix),s.place(new Point(0,0))])
-        symbols.push([matrix.clone().append(matrix2).append(matrix),s.place(new Point(0,0))])
-        // symbols.push([matrix2.clone().append(matrix).append(matrix2),s.place(new Point(0,0))])
-        
-        // symbols.push([matrix3.clone(),s.place(new Point(0,0))])
-
-        function place6(mat) {
-            symbols.push([mat,s.place(new Point(0,0))])
-            for(let i=0; i<5; i++) {
-                let mat_i = mat.clone().append(symbols[i][0]);
-                symbols.push([mat_i,s.place(new Point(0,0))])
-            }    
-        }
-
-        // place6(matrix3);
-        let mat_1 = matrix.clone().append(matrix2).append(matrix).append(matrix3);
-        place6(mat_1);
-        place6(mat_1.inverted());
-        place6(mat_1.clone().append(mat_1));
-
-        
-        let mat_2 = matrix.clone().append(matrix3).append(matrix).append(matrix2);
-        place6(mat_2);
-        place6(mat_2.inverted());
-
-        place6(mat_1.clone().append(mat_2));
-        place6(mat_1.clone().append(mat_2).inverted());
-        // place6(mat_2.clone().append(mat_1));
-        
-        // symbols.push([mat_2,g2])
-
-
-        let p3 = s.place(new Point(400,400));
-
-        p3.onMouseDrag = function(e) { 
-            this.position.set(e.point);
-            symbols.forEach(([mat, p]) => {
-                p.transform(p.matrix.inverted());
-                p.transform(mat.clone().append(p3.matrix));
+function set_3_60(mirror1, mirror2, mirror3) {
+    let startTime = performance.now();
+    let m1 =  mirror1.matrix, m2 = mirror2.matrix, m3 = mirror3.matrix;
+    let rot = m2.clone().append(m1);
+    let baseMatrices = [new PIXI.Matrix(), m1];
+    for(let i=2; i<6; i++) {
+        baseMatrices.push(rot.clone().append(baseMatrices[i-2]));
+    }
+    let matrices = [];
+    let t1 = m1.clone().append(m3).append(m1).append(m2);
+    let t2 = m2.clone().append(m3).append(m2).append(m1);
+    for(let x= -5; x<=5; x++) {
+        for(let y = -5; y<=5; y++) {
+            let tx = t1.tx * x + t2.tx * y;
+            let ty = t1.ty * x + t2.ty * y;            
+            baseMatrices.forEach(baseMatrix => {
+                matrices.push(baseMatrix.clone().translate(tx,ty));
             })
         }
-
-        p3.position.set(new Point(400,320));
-        symbols.forEach(([mat, p]) => {
-            p.transform(p.matrix.inverted());
-            p.transform(mat.clone().append(p3.matrix));
-        })
-
-
-
-        let line = new Path();
-        line.moveTo(-800,0); line.lineTo(800,0);
-        line.strokeColor = 'black';
-        line.strokeWidth = 5;
-        let lineS = new Symbol(line);
-        let line1 = lineS.place(new Point(400,400))
-        let line2 = lineS.place(new Point(400,400))
-        line2.rotation = 120;
-        let line3 = lineS.place(new Point(600,400))
-        line3.rotation = 240;
-
-        console.log(performance.now() - start)
-        */
-    }
+    }    
+    mirrorBox.setMirrorMatrices(matrices);
+    console.log("done in "+(performance.now()-startTime));
 }
+
+
+function clearScene() {
+    mirrors.forEach(mirror => mirror.line.visible = false);
+    mirrorBox.setMirrorMatrices([]);
+}
+function setScene1() {
+    clearScene();
+    mirrors[0].line.visible = true;
+    mirrorBox.setMirrorMatrices([new PIXI.Matrix(), mirrors[0].matrix]);
+}
+function setScene2() {
+    clearScene();
+    mirrors[0].line.visible = true;
+    mirrors[1].line.visible = true;
+    set_2_60(...mirrors)
+}
+function setScene3() {
+    clearScene();
+    mirrors[0].line.visible = true;
+    mirrors[1].line.visible = true;
+    mirrors[2].line.visible = true;
+    set_3_60(...mirrors)
+}
+
+async function initialize() {
+    app = new PIXI.Application();
+    await app.init({ 
+        backgroundColor: 'gray',
+        resizeTo: window,
+        antialias: true,
+        autoDensity: true,
+        // autoStart: false,
+        // backgroundColor: 0x333333,
+        resolution: window.devicePixelRatio
+      
+    });
+
+    document.body.appendChild(app.canvas);
+    app.stage.eventMode = 'dynamic';
+            
+    app.stage.position.set(app.canvas.width/2,app.canvas.height/2);
+
+
+    imageLayer = new PIXI.Container();
+    mirrorLayer = new PIXI.Container();
+    dotLayer = new PIXI.Container();
+    app.stage.addChild(imageLayer);
+    app.stage.addChild(mirrorLayer);
+    app.stage.addChild(dotLayer);
+
+    let dot = new MovingDot({color:'red', callback:(p) =>{
+        mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
+    }})
+    dot.asset.position.set(-100,100);
+    let p = dot.asset.position;
+    console.log(p)
+    mirrorBox = new MirrorBox();
+    mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
+
+    
+
+    let mirror1 = new Mirror(new PIXI.Point(0,100), 0);
+    let mirror2 = new Mirror(new PIXI.Point(-100,100), -60);
+    let mirror3 = new Mirror(new PIXI.Point(100,100), 60);
+    mirrors = [mirror1, mirror2, mirror3]
+    // set_3_60(...mirrors)
+
+    clearScene();
+
+    //let g = new PIXI.Graphics().circle(200,0,3).fill('blue');
+    //dotLayer.addChild(g);
+
+    addEventListener("keydown", (event) => {
+        console.log(event);
+        if(event.key=='1') setScene1();
+        else if(event.key=='2') setScene2();
+        else if(event.key=='3') setScene3();
+    });
+}
+
+async function setup() {
+    initialize()
+}
+
