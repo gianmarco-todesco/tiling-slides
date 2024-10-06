@@ -7,3 +7,12 @@
 img {
     margin:0;
 }
+
+.reveal .img2 {
+    width: 45%;
+    vertical-align: middle;
+}
+
+.reveal iframe {
+    overflow: hidden;
+}
