@@ -7,12 +7,10 @@ const slide = {
 let app;
 
 
-
-
-async function initPixiAndLoadTexture() {
+async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
-        backgroundColor: 'gray',
+        backgroundColor: '#aaaaaa',
         resizeTo: window,
         antialias: true,
         autoDensity: true,
@@ -28,7 +26,7 @@ async function initPixiAndLoadTexture() {
 }
 
 function setup() {
-    initPixiAndLoadTexture();
+    initPixi();
     document.addEventListener('keydown', (e) => {
         if(e.key=='2') targetStatus = 2;
         else if(e.key=='1' ) targetStatus = 0;
@@ -63,25 +61,26 @@ class Model {
         this.color2 = 'cyan';
         
         let gc = new PIXI.GraphicsContext();
-        this._drawPrototile(gc, this.color1);
+        this.updatePrototile(gc, this.color1);
         this.prototile1 = gc;
         gc = new PIXI.GraphicsContext();
-        this._drawPrototile(gc, this.color2);
+        this.updatePrototile(gc, this.color2);
         this.prototile2 = gc;
         
         this.items = [];
+        this.table = {};        
+        
     }
 
     updatePrototiles(param) {
         this.prototile1.clear();
-        this._drawPrototile(this.prototile1, this.color1, param);
+        this.updatePrototile(this.prototile1, this.color1, param);
         this.prototile2.clear();
-        this._drawPrototile(this.prototile2, this.color2, param);   
+        this.updatePrototile(this.prototile2, this.color2, param);   
     }
 
-    _drawPrototile(path, color, param = 1) {
+    updatePrototile(path, color, param = 1) {
         let pts = [];
-
         function rot(p,ang,center) {
             p = p.subtract(center);
             return new PIXI.Matrix().rotate(ang).apply(p).add(center);
@@ -113,12 +112,6 @@ class Model {
         if(i<0) return null;
         if(j<0 || j>2*i) return null;
         let matrix = new PIXI.Matrix();
-        /*
-        if(k>=this.n/2) {
-            let q = this.p1.multiplyScalar(-1.0);
-            matrix.translate(q.x, q.y);
-        }
-            */
         if(i==0) {
             matrix.rotate(k*2*Math.PI/this.n);
         } else {
@@ -131,24 +124,26 @@ class Model {
             let delta = this.d12.multiplyScalar(Math.floor(j/2));
             matrix.translate(this.p1.x*i, this.p1.y*i);
             matrix.translate(delta.x, delta.y);
-
-
-
-            matrix.rotate(k*2*Math.PI/this.n);                
-            
+            matrix.rotate(k*2*Math.PI/this.n);                            
         }
         return matrix;
     }
 
-    place(k,i,j) {
-        
+    getKey(k,i,j) {
+        return "pos_"+k+","+i+","+j;
+    }
+
+    place(k,i,j) {        
         let matrix = this.getMatrix(k,i,j);
         if(matrix === null) return;
         let t = (k+j)%2; 
         
         let itm = new PIXI.Graphics(t==0 ? this.prototile1 : this.prototile2);
         itm.setFromMatrix(matrix);
-        this.items.push(itm);
+        
+        let key = this.getKey(k,i,j);
+        this.items.push({g:itm, key});        
+        this.table[key] = itm;
         if(k*2<this.n) this.bottom.addChild(itm);
         else this.top.addChild(itm);
         // itm.alpha = 0.7;
@@ -159,12 +154,75 @@ class Model {
             for(let j=0; j<=2*i; j++) this.place(k,i,j);
         }
     }
+    clear() {
+        this.items.forEach(item => item.g.destroy());
+        this.items.length = 0;
+        this.table = {}
+    }
+
+    getPositionIterator() {
+        let ring = 0;
+        let k = 0;
+        let j = 0;
+        const m = this.n/2;
+        let count = 0;
+        const it = {
+            next() {
+                let out = null;
+                count++;
+                if(count%2==1) 
+                    out = {k,i:ring,j};
+                else {
+                    out = {k:m+k,i:ring,j}
+                    if(ring==0) {
+                        k++;
+                        if(k>=m) {k=0; ring++;}
+                    } else {
+                        j++;
+                        if(j>ring*2) {
+                            j=0; k++;
+                            if(k>=m) {
+                                ring++;
+                                k=j=0;
+                            }
+                        }
+                    }
+                }
+                return out;
+            }
+        }
+        return it;
+    }
+    makeSpiral(n) {
+        let touched = {}
+        let it = this.getPositionIterator();
+        for(let i=0; i<n; i++) {
+            let p = it.next();
+            let key = this.getKey(p.k,p.i,p.j);
+            touched[key] = true;
+            if(this.table[key]===undefined) {
+                this.place(p.k,p.i,p.j)
+            }
+        }
+        const items = this.items;
+        for(let i=0; i<items.length; ) {
+            let key = items[i].key;
+            if(touched[key]) i++;
+            else {
+                items[i].g.destroy();
+                delete this.table[key];
+                items.splice(i,1);
+            }
+        }        
+    }
+
 }
 
 let model;
 let curStatus = 0;
 let targetStatus = 0;
 
+function lerp(a,b,t) { return a.multiplyScalar(1-t).add(b.multiplyScalar(t)); }
 
 function smoothStep(t, t0, t1) {
     if(t<t0) return 0;
@@ -172,18 +230,212 @@ function smoothStep(t, t0, t1) {
     else return (1-Math.cos(Math.PI*(t-t0)/(t1-t0)))*0.5;
 }
 
+
+class Act1 {
+    init(model) {
+        this.model = model;
+        this.count = 1;
+        this.automatic = false;
+        model.clear();
+        model.place(0,0,0);
+    }
+    forward() { 
+        if(this.count >= 6) {
+            if(this.count > 100) return false;
+            this.automatic = true;
+            this.t0 = performance.now();
+            this.count0 = this.count;
+        } else {
+            this.count++;
+            this.model.makeSpiral(this.count);
+        }
+        return true;
+    }
+    backward() {
+        if(this.count < 6) {
+            if(this.count <= 1) return false;
+            this.count--;
+        } else this.count = 1;
+        this.model.makeSpiral(this.count);
+        return false;
+    }
+    onKey(e) {}
+    tick() {
+        const maxCount = 3000;
+        if(!this.automatic) return;
+        let t =  (performance.now() - this.t0) * 0.001;
+        let count = Math.min(maxCount, this.count0 + 
+            Math.exp(t*0.5 + 4.0)) - Math.exp(4.0);
+        this.count = count;
+        this.model.makeSpiral(count);
+        if(count >= maxCount) this.automatic = false;
+    }
+}
+
+class Act2 {
+    init(model) {
+        this.model = model;
+        this.model.makeSpiral(3000);
+        this.curStatus = 0;
+        this.targetStatus = 0;
+    }   
+    forward() {
+        if(this.targetStatus<2)
+            this.targetStatus++;
+        return true;
+    }
+    backward() {
+        if(this.targetStatus>0)
+            this.targetStatus--;
+        return true;
+    }
+    tick(elapsed) {
+        let changed = false;
+        let curStatus = this.curStatus;
+        if(curStatus < this.targetStatus) {
+            curStatus = Math.min(this.targetStatus, curStatus + elapsed);
+            changed = true;
+        } else if(this.curStatus > this.targetStatus) {
+            curStatus = Math.max(this.targetStatus, curStatus  - elapsed);
+            changed = true;
+        }
+        if(changed) {
+            this.curStatus = curStatus;
+            let t0 = smoothStep(curStatus, 0.0, 1.0);
+            let t1 = smoothStep(curStatus, 1.0, 2.0);
+            const model = this.model;
+            model.updatePrototiles(1-t0);
+            model.bottom.position.x = -model.size/2 * (1-t1);
+            model.top.position.x = model.size/2 * (1-t1);
+            
+        }
+    }
+}
+
+
+class Director {
+    constructor() { 
+        const m = 15;   
+        this.model = new Model(2*m, 200);
+        this.acts = [
+            new Act1(), new Act2()
+        ]
+        this.startAct(0);
+        const director = this;
+        document.addEventListener('keydown', (e) => {
+            console.log(e);
+            if(e.key == "x") { director.forward(); }
+            else if(e.key == 'z')  { director.backward(); }
+            else if(e.key == 'd') { director.startAct(director.currentActIndex+1); }
+        })
+
+        PIXI.Ticker.shared.add((ticker)=>{
+            if(director.currentAct) director.currentAct.tick(ticker.elapsedMS * 0.001);
+        });
+
+    }
+
+    startAct(actIndex) {
+        if(0<=actIndex && actIndex<this.acts.length) {
+            this.currentActIndex = actIndex;
+            this.currentAct = this.acts[actIndex];
+            this.currentAct.init(this.model);
+        }
+    }
+    forward() {
+        if(this.currentAct) {
+            if(this.currentAct.forward()) return;
+        }
+        this.startAct(this.currentActIndex+1);
+    }
+
+    backward() {
+        if(this.currentAct) {
+            if(this.currentAct.backward()) return;
+        }
+        this.startAct(this.currentActIndex-1);
+
+    }
+}
+
+let director;
+
 function buildScene() {
-    console.log("qui")
-    model = new Model(30, 200);
-    const m = 15;
-    model.place(0,0,0);
-    model.place(m,0,0);
+    // console.log("qui")
+    director = new Director();
+
+    let scale = 1.0;
+    document.addEventListener('wheel', (e)=>{
+        console.log(e);
+        scale = Math.max(0.6, Math.min(2.0, scale * Math.exp(e.deltaY*0.005)));
+        app.stage.scale.set(scale,scale);
+        console.log(scale);
+    })
+
+    /*
+    Questo è il modello di Voderberg
+
+    vedi: https://faculty.washington.edu/cemann/Your%20Friendly%20Neighborhood%20Voderberg%20Tile.pdf
+
+    let n = 30;
+    let psi = 2*Math.PI/n;
+    let beta = Math.PI/2 - Math.PI/n;
+    let r = 200;
+    let a = 2 * r * Math.sin(psi/2);
+
+    let b = a * 1.4;
+    let rho = 0.3;
+
+    let p5 = new PIXI.Point(0,0);
+    let p6 = new PIXI.Point(-a*Math.cos(beta), a*Math.sin(beta));
+    let p9 = new PIXI.Point(r,0);
+    let p8 = p9.add(new PIXI.Point(-b*Math.cos(rho),-b*Math.sin(rho)));
+    let p7 = p6.add(p9.subtract(p8));
+
+    let t = 0;
+    p6 = lerp(p6, p9.multiplyScalar(0.3), t);
+    p7 = lerp(p7, p9.multiplyScalar(0.5), t);
+    p8 = lerp(p8, p9.multiplyScalar(0.75), t);
+    
+
+    let matrix = new PIXI.Matrix().rotate(psi);
+    let pts = [p9,p8,p7,p6].map(p=>matrix.apply(p)).concat([p5,p6,p7,p8,p9]);
+
+    let g = new PIXI.Graphics();
+    g.moveTo(0,0);
+    g.lineTo(p9.x,p9.y);
+    g.lineTo(r*Math.cos(psi), r*Math.sin(psi));
+    g.closePath();
+    g.stroke({color:'black', join:'round'})
+
+    g.poly(pts,true);
+    g.fill('yellow');
+    g.stroke({color:'magenta', join:'round'})
+
+    g.poly(pts.map(p=>matrix.apply(p)),true);
+    g.fill('cyan');
+    let matrix2 = new PIXI.Matrix().rotate(Math.PI).translate(pts[0].x,pts[0].y);
+    g.poly(pts.map(p=>matrix2.apply(p)),true);
+    g.fill('orange');
+
+    /*
+    let matrix2 = new PIXI.Matrix().rotate(Math.PI+psi).translate(pts[0].x,pts[0].y);
+    g.poly(pts.map(p=>matrix2.apply(p)),true);
+    g.fill('orange');
+    */
+    // app.stage.addChild(g)
+    
+
+    
     
     
     let ring = 0;
     let k = 1, j = 0;
     let count = 0;
+    /*
+*/
 
+    /*
     PIXI.Ticker.shared.add((ticker)=>{
         let t = performance.now() * 0.001;
 
@@ -209,96 +461,8 @@ function buildScene() {
         }
         
 
-        let changed = false;
-        let elapsed = ticker.elapsedMS * 0.001;
-        if(curStatus < targetStatus) {
-            curStatus = Math.min(targetStatus, curStatus + elapsed);
-            changed = true;
-        } else if(curStatus > targetStatus) {
-            curStatus = Math.max(targetStatus, curStatus  - elapsed);
-            changed = true;
-        }
-
-        if(changed) {
-            let t0 = smoothStep(curStatus, 0.0, 1.0);
-            let t1 = smoothStep(curStatus, 1.0, 2.0);
-            model.updatePrototiles(1-t0);
-            model.bottom.position.x = -model.size/2 * (1-t1);
-            model.top.position.x = model.size/2 * (1-t1);
-            
-        }
+        
 
     })
-        
+    */
 }
-/*
-function makeBuilder(model) {
-    let i = 0;
-    let k = 0;
-    let j = 0;
-    const it = {
-        step() {
-            console.log(i,j,k)
-            if(i==0) {
-                if(k<model.n) model.place(k++,i,0);
-                else {
-                    i = 1;
-                    j = 0;
-                    k = 0;
-                }
-            } else {
-                if(j<=2*i) model.place(k,i,j++);
-                else if(k+1<model.n) {
-                    model.place(++k,i,j=0);
-                }
-            }
-
-        }
-    }
-    return it;
-}
-
-let model;
-let builder;
-
-
-function setup() {
-    paper.setup('myCanvas');
-    with(paper) {
-
-        view.setCenter(new Point(0,0));
-
-        model = new Model(30,200);
-        
-        builder = makeBuilder(model); 
-
-        
-        // for(let i=0; i<12; i++) model.placeRing(i);
-        
-        model.place(0,0,0);
-        model.place(15,0,0);
-        
-        // 1,0,0 => 14,0,0
-        // model.place(1,0,0);
-        // model.place(1,0,0);
-
-        let ring = 0;
-        let count = 0;
-        let intervalId = setInterval(() => {
-            count++;
-            console.log(count);
-            if(count<15) {
-                model.place(count,0,0);
-                model.place(15+count,0,0);
-            } else if(count<15+15*3) {
-                let hi = Math.floor((count-15)/3);
-                let lo = (count-15)%3;
-                model.place(hi,1,lo);
-                model.place(15+hi,1,lo);
-            } else clearInterval(intervalId);
-        }, 100);
-
-    }
-}
-
-*/

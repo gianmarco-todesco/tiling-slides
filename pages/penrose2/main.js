@@ -44,9 +44,11 @@ function buildScene() {
     
     let center = tLpts.reduce((a,b)=>a.add(b)).multiplyScalar(1/3);
     let s = 30;
+    // let s = 2;
     let matrix = new PIXI.Matrix().translate(-center.x,-center.y).scale(s,s);
     let startTime = performance.now();
     build(1,12,matrix);
+    // build(1,4,matrix);
     console.log(performance.now() - startTime)
     //let g = new PIXI.Graphics().circle(0,0,5).fill('magenta');
     //app.stage.addChild(g);
@@ -54,5 +56,22 @@ function buildScene() {
     place(tLprotoTile, mat11);
     place(TLprotoTile, mat12);
     */
-       
+
+    /*
+    let layer = new PIXI.Container();
+    for(let child of app.stage.children) {
+        child.updateLocalTransform();
+        let g = child.clone();
+        g.setFromMatrix(child.localTransform);
+        layer.addChild(g);
+    }
+    window.layer = layer;
+    layer.alpha = 0.5
+    app.stage.addChild(layer);
+
+    PIXI.Ticker.shared.add((t) => {
+        layer.position.x = 200*Math.sin(performance.now()*0.001)
+    })
+        */
+
 }

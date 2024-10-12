@@ -15,3 +15,53 @@ questa conferenza vedremo come si fa a tassellare il piano
 usano la simmetria come strumento, ma vedremo anche come 
 è possibile usare altri strumenti e creare tassellazioni 
 non simmetriche 
+
+
+
+1. title (vogliamo tassellare il piano. usiamo simmetria e asimmetria)
+2. Symmetry. Cos'è la simmetria? Invarianza rispetto ad una trasformazione.
+   es. rotazione di 180°, riflessione. (cambio colore con yin/yang ?)
+3. Una trasformazione importante per noi è la traslazione.
+   (parlo di rosoni, fregi e mosaici?)
+   faccio vedere una tassellazione in esagoni (con F al centro. iniziale
+   di favo e fermo). Mostro l'invarianza per traslazioni (due frecce).
+   Mostro che un singolo esagono può coprire tutto il piano
+   Faccio vedere una tassellazione in quadrati
+   Faccio vedere che l'ettagono non va bene
+   Affermo che con il pentagono non si riesce (ma mostro una tassellazione
+   in pentagoni irregolari)
+   Faccio vedere che con il triangolo interviene la rotazione
+4. Mostro una tassellazione in quadrilateri irregolari. Faccio vedere
+   la traslazione e la glissoriflessione. Aggiungo il colore.
+   Spiego che la forma del dominio fondamentale può cambiare => escher 
+5. Come si combinano le simmetrie? Tre specchi (aggiungo un punto
+   rotante attorno alla F)
+6. Pannello con l'affermazione dei 17 gruppi
+6bis. 2 immagini con due disegni molto diversi, ma stesso gruppo.
+7. Visualizzazione dei 17 gruppi (foto? immagine animata?)
+8. Wallpaper
+9. mostro tassellazioni uniformi => rottura simmetria con la rotazione di un modulo
+
+1. Spirale
+2. L-reptile
+3. mostro tassellazioni periodiche con le tessere delle due slide precedenti
+4. Possono esistere tessere solo aperiodiche?
+5. Tessere di Wang
+6. Addizione con tessere di Wang
+7. Pannello con l'enunciato del teorema di Berger
+8. Pannello con la riduzione del numero di Tessere
+9. Foto di Penrose
+10. i tre insiemi di tessere di penrose
+11. tassellazione con rombi (panning)
+11b. foto di pavimenti e muri; carta igienica
+12. inflazione
+13. pannello con il nobel per i quadricristalli
+
+1. Pannello con riduzione del numero di tessere, compreso penrose
+2. Comincia la ricerca dell'Einstein
+3. Foto dello scopritore
+4. mostro l'hat
+5. rings
+6. inflation
+7. morphing
+8. spettro

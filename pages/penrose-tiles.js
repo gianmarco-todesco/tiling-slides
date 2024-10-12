@@ -122,7 +122,7 @@ let mat43 = new Matrix().translate(TLpts[1],-1).rotate(-180-36).toPixi();
 function build(i, level, parentMatrix) {
     let pts = [tLpts,TLpts, tRpts, TRpts][i-1].map(p=>parentMatrix.apply(p));
 
-    const width = app.canvas.width * 0.75, height = app.canvas.height * 0.75;
+    const width = app.canvas.width * 3, height = app.canvas.height * 3;
     let b0=true,b1=true,b2=true,b3=true;
     pts.forEach(p=>{
         if(p.x>-width/2) b0=false;
