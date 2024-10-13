@@ -7,7 +7,7 @@ let app, model, director;
 async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
-        backgroundColor: 'gray',
+        backgroundColor: 'lightgrey',
         resizeTo: window,
         antialias: true,
         autoDensity: true,
@@ -36,6 +36,11 @@ function cleanup() {
     app.destroy();
     app = null;
 }
+
+function smooth(t) {
+    return (1.0-Math.cos(t*Math.PI))/2;
+}
+
 
 class Model {
     constructor(levelCount = 3) {
@@ -101,34 +106,6 @@ class Model {
         this.addMetaTileBounds(metatile, matrix, container);                
     }
 
-    fourMetatiles() {
-        this.clear();
-        let metatiles = createChildren(this.patches[0]);
-        let lst = [
-            {key:"H", pos:new PIXI.Point(-500,-100)},
-            {key:"T", pos:new PIXI.Point(-500, 350)},
-            {key:"P", pos:new PIXI.Point( 200, -150)},
-            {key:"F", pos:new PIXI.Point( 200, 250)},
-        ]
-        this.metatiles = metatiles;
-        for(let itm of lst) {
-            let metatile = metatiles[itm.key];
-            
-            let matrix = new PIXI.Matrix().translate(itm.pos.x, itm.pos.y);
-
-            let c = new PIXI.Container();
-            this.container.addChild(c);
-            c.position.copyFrom(itm.pos);
-            this.addMetaTile(metatile, new PIXI.Matrix(), c);
-            this.addMetaTileBounds(metatile, new PIXI.Matrix(), c);
-            
-        }
-        //this.addMetaTile(metatiles.P, new PIXI.Matrix());
-        //this.addMetaTile(metatiles.F, new PIXI.Matrix());
-        //this.addMetaTile(metatiles.T, new PIXI.Matrix());
-    }
-
-
     boh1(itm) {
         let g = new PIXI.Graphics();
         for(let childItm of itm.children) {
@@ -151,6 +128,7 @@ class Model {
 
 }
 
+
 class Act1 extends Act {
     constructor() { super(); }
     start() {
@@ -168,29 +146,147 @@ class Act2 extends Act {
 class Act3 extends Act {
     constructor() { super(); }
     start() {
-        this.model.fourMetatiles();
+        const model = this.model;
 
-        let tiles = this.model.container.children;
-        let h_tile = tiles[0];
-        
-        let qs = this.model.metatiles.H.bounds.map(p=>p.add(h_tile.position));
-        let g = new PIXI.Graphics().poly(qs,true).stroke({color:'red', width:5});
-        this.model.container.addChild(g);
+        model.clear();
+        let metatiles = this.metatiles = createChildren(model.patches[0], false);
+        let tiles = this.tiles = {};
+
+        this.offsets = {
+            'H': new PIXI.Point(-600,-50),
+            'P': new PIXI.Point(-600,-50 + 200),
+            'T': new PIXI.Point(-600 + 300,-50),
+            'F': new PIXI.Point(-600+300,-50 - 50),            
+        };
+
+        for(let key of  ["H","T","P","F"]) {
+            let metatile = metatiles[key];            
+            let c = new PIXI.Container();
+            c.position.copyFrom(this.offsets[key]);
+            model.container.addChild(c);
+            model.addMetaTile(metatile, new PIXI.Matrix(), c);
 
 
-        let qs2 = this.model.metatiles.P.bounds;
-        g = new PIXI.Graphics().poly(qs2,true).stroke({color:'green', width:5});
-        this.model.container.addChild(g);
+            let g = new PIXI.Graphics().poly(metatile.bounds, true);
+            g.stroke({color:'black', width:6});
+            c.addChild(g);
 
-        let matrix = getFourPointsTransform(qs2[2], qs2[3], qs[1], qs[0]);
 
-        g.setFromMatrix(matrix);
+            tiles[key] = c;
 
-        tiles[2].setFromMatrix(matrix);
-
+        }
+        this.curKey = '';
+        this.targetKey = '';
+        this.param = 0;
 
     }
+
+    moveTile(key, t) {
+        t = smooth(t);
+        let dstKey = key == 'F' ? 'P' : 'H';
+        let p = this.offsets[key].multiplyScalar(1-t)
+            .add(this.offsets[dstKey].multiplyScalar(t));
+        this.tiles[key].position.copyFrom(p);
+    }
+
+    tick(dt) {
+        if(this.curKey != this.targetKey) {
+            if(this.curKey == '') {
+                this.curKey = this.targetKey;
+            } else {
+                this.param = Math.max(0.0, this.param - dt);
+                this.moveTile(this.curKey, this.param);
+                if(this.param == 0.0) this.curKey = this.targetKey;
+            }
+        }
+        if(this.curKey==this.targetKey) {
+            if(this.curKey == '') return;
+            if(this.param >= 1.0) return;
+            this.param = Math.min(1.0, this.param + dt);
+            this.moveTile(this.curKey, this.param);
+        } 
+        
+    }
+    onkeydown(e) {
+        console.log("qui", e)
+        if(this.curKey != this.targetKey || this.param != 0.0 && this.param != 1.0)
+            return;
+        let targetKey = {'1':'P','2':'T','3':'F'}[e.key];
+        if(targetKey === undefined) return;
+        this.targetKey = targetKey == this.targetKey ? "" : targetKey;
+    
+        
+    }
 }
+
+
+class Act4 extends Act {
+    constructor() { super() }
+    start() {
+        this.setLevel(0);
+        
+    }
+
+    setLevel(level) {
+        const model = this.model;
+        model.clear();
+
+        let scaleFactor = 1/3**level;
+
+        let patch = model.patches[level];
+        let metatiles = this.metatiles = createChildren(patch, false);
+
+        let offsets = {
+            'H': new PIXI.Point(-550,-10),
+            'P': new PIXI.Point(-600,100),
+            'T': new PIXI.Point(-150,0),
+            'F': new PIXI.Point(-500,-90),
+            
+        }
+        for(let key of ["H","P","T","F"]) {
+            let metatile = metatiles[key];
+            let g = new PIXI.Graphics();
+            metatile.metatilesBounds.forEach(bounds=>{                
+                g.poly(bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
+                    .stroke({color:'blue', width:1.5});
+            })
+            g.poly(metatile.bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
+                .stroke({color:'magenta', width:3});
+            model.container.addChild(g);
+            let off = offsets[key];
+            g.position.copyFrom(off);
+        }
+    }
+    onkeydown(e) {
+        if(e.key == '1') this.setLevel(1);
+        else if (e.key == '2') this.setLevel(2);
+        else if (e.key == '3') this.setLevel(3);
+        else if (e.key == '0') this.setLevel(0);
+    }
+}
+
+class Act5 extends Act {
+    constructor() { super() }
+    start() {
+        let model = this.model;
+        this.setLevel(0);
+    }
+
+    setLevel(level) {
+        let model = this.model;
+        let metatiles = createChildren(model.patches[level]);
+        model.clear();
+        model.addMetaTile(metatiles.H, new PIXI.Matrix());
+        let g = new PIXI.Graphics();        
+        metatiles.H.metatilesBounds.forEach(bound=>{
+            g.poly(bound,true).stroke({color:'blue', width:3});
+        })
+        model.container.addChild(g);
+        model.addMetaTileBounds(metatiles.H, new PIXI.Matrix());
+        
+    }
+}
+
 
 
 
@@ -210,9 +306,11 @@ function buildScene() {
     console.log("model created in "+dt+"ms");
 
     director = new Director(model);
-    director.addAct(new Act3());
+    director.addAct(new Act5());
+    director.addAct(new Act4());
     director.addAct(new Act1());
     director.addAct(new Act2());
+    director.addAct(new Act3());
 
 
     // p1 = patch.createObject(app);

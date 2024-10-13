@@ -51,6 +51,7 @@ class Metatile {
         this.children = [];
         this.matrix = new PIXI.Matrix();
         this.type = null;
+        this.metatilesBounds = [];
     }
     addChild(matrix, shape) {
         this.children.push(new MetatileItem(matrix, shape))
@@ -90,6 +91,9 @@ class Metatile {
         this.children.forEach(child => {
             child.matrix.prepend(tr);
         })
+        this.metatilesBounds.forEach((q,i,a) => {
+            a[i] = q.map(qq=>tr.apply(qq))
+        })
 
     }
 }
@@ -114,6 +118,7 @@ const H_metatile = (()=>{
     matrix = matrix.append(new PIXI.Matrix(-1,0,0,1,0,0));
     m.addChild(matrix, H1_shape);
     m.setBounds(pts);
+    m.metatilesBounds.push(m.bounds);
     m.type = "H";
     return m;
 })();
@@ -124,6 +129,7 @@ const P_metatile = (()=>{
     m.addChild(makeMatrix(0.5,0,0,-2), P_shape);
     m.addChild(makeMatrix(0.5,-Math.PI/3,1.5,-1), P_shape);
     m.setBounds([pt(0,0),pt(4,0),pt(3,2),pt(-1,2)]);
+    m.metatilesBounds.push(m.bounds);
     m.type = "P";
     return m;
 })();
@@ -133,6 +139,7 @@ const F_metatile = (()=>{
     m.addChild(makeMatrix(0.5,0,0,-2), F_shape);
     m.addChild(makeMatrix(0.5,-Math.PI/3,1.5,-1), F_shape);
     m.setBounds([pt(0,0),pt(3,0),pt(3.5,1),pt(3,2),pt(-1,2)]);
+    m.metatilesBounds.push(m.bounds);
     m.type = "F";
     return m;
 })();
@@ -141,15 +148,11 @@ const T_metatile = (()=>{
     let m = new Metatile();
     m.addChild(makeMatrix(0.5,-Math.PI/3,0.5,-1), T_shape);
     m.setBounds([pt(0,0),pt(3,0),pt(1.5,3)]);
+    m.metatilesBounds.push(m.bounds);
     m.type = "T";
     return m;
 })();
 
-/*
-function uff(t) {
-    t.createObject(app);
-}
-*/
 
 class SupertileChild {
     constructor(matrix, metatile) {
@@ -296,7 +299,7 @@ function createPatch(metatiles) {
     return patch;
 }
 
-function createChildren(patch) {
+function createChildren(patch, recenter = true) {
 
     function createMetatile(lst, outline, type) {
         let m = new Metatile();
@@ -307,9 +310,12 @@ function createChildren(patch) {
                 let matrix = child.matrix.clone().append(grandchild.matrix);
                 m.addChild(matrix, grandchild.shape);
             })
+            child.metatile.metatilesBounds.forEach(q => {
+                m.metatilesBounds.push(q.map(qq=>child.matrix.apply(qq)))
+            });
         }
         m.setBounds(outline.map(p=>p));
-        m.recenter();
+        if(recenter) m.recenter();
         return m;    
     }
 
