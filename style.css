@@ -16,3 +16,7 @@ img {
 .reveal iframe {
     overflow: hidden;
 }
+
+.reveal .gallery img {
+    margin:0;
+}

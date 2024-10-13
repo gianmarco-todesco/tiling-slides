@@ -159,7 +159,7 @@ function createGrid(origin, e0, e1, bounds) {
             j0 = Math.floor(j0);
             j1 = Math.ceil(j1);
             for(let j=j0; j<=j1 && grid.length<maxCount;j++) {
-                grid.push(rf.getPoint(i,j));
+                grid.push({p:rf.getPoint(i,j), i, j});
             }   
         }
     }

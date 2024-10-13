@@ -7,7 +7,6 @@ const slide = {
 let app;
 
 
-
 function makeDraggable(obj, cb = null) {
     const dragOffset = new PIXI.Point(0,0);
     console.log("qua")
@@ -33,7 +32,7 @@ function makeDraggable(obj, cb = null) {
 
 let winBounds;
 
-async function initPixiAndLoadTexture() {
+async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
         backgroundColor: 'gray',
@@ -49,119 +48,110 @@ async function initPixiAndLoadTexture() {
     app.stage.eventMode = 'dynamic';
     app.stage.position.set(app.canvas.width/2,app.canvas.height/2);
 
-    let g = new PIXI.Graphics();
-    const unit = 40.0; // 55.0;
+    buildScene();
+}
+
+let param = 0.0;
+let paramTarget = 0.0;
+
+function buildScene() {
+    const unit = 80.0; // 55.0;
     const r = unit;
-    let pts = getRegularPolygonPoints(6,r);
-    g.poly(pts,true); // drawPolygon(g, pts);
-    g.fill('yellow');
-    g.stroke('black');
-    let outPts = [];
-    for(let i = 6-1; i<6+2; i++) {
-        let squarePts = getAdjacentRegularPolygonPoints(pts, i, 4);
-        g.poly(squarePts, true);
-        g.fill('cyan');
-        g.stroke('black');
-        if(i>5) {
-            let tPts = getAdjacentRegularPolygonPoints(squarePts, 1, 3);
-            g.poly(tPts, true);
-            g.fill('blue');
-            g.stroke('black');
-            outPts.push(squarePts[2]);
-    
-        }
-        /*
-        tPts = getAdjacentRegularPolygonPoints(squarePts, 3, 3);
-        drawPolygon(g,tPts);
-        g.fill('magenta');
-        g.stroke('black');
-        */
-    }
-    app.stage.addChild(g)
-
-    outPts.forEach(p=>{
-        createDot(p.x,p.y);
-    })
 
 
-    let d1 = pts[0].add(pts[5]).multiplyScalar(1+1/Math.sqrt(3)+0.1);
-    let d2 = pts[0].add(pts[1]).multiplyScalar(1+1/Math.sqrt(3)+0.1);
-
-    function placeCopy(i,j) {
-        let g2 = g.clone();
-        app.stage.addChild(g2)
-        let p = d1.multiplyScalar(i).add(d2.multiplyScalar(j));
-        g2.position.set(p.x,p.y);    
-    }
-
-    placeCopy(-2,0);
-    // placeCopy(-1,0);
-    placeCopy(1,0);
-    placeCopy(2,0);
-
-    placeCopy(-2,1);
-    placeCopy(-1,1);
-    placeCopy( 0,1);
-    placeCopy( 1,1);
-    
-    placeCopy(-1,-1);
-    // placeCopy( 0,-1);
-    // placeCopy( 1,-1);
-    placeCopy( 2,-1);
-
-    placeCopy( 0,-2);
-    placeCopy( 1,-2);
-    placeCopy( 2,-2);
-
-    let gBounds = new PIXI.Graphics();
-    let mrg = 100;
+    let mrg = -20;
     let x1 = app.canvas.width/2-mrg;
     let y1 = app.canvas.height/2-mrg;
+    winBounds = {x0:-x1,y0:-y1,x1,y1};
+    
+
+    let hexPts = getRegularPolygonPoints(6,r);
+    let squarePts = getAdjacentRegularPolygonPoints(hexPts, 0, 4);
+    let triPts = getAdjacentRegularPolygonPoints(squarePts, 1, 3);
+    
+    let hexShape = new PIXI.GraphicsContext().poly(hexPts,true).fill('yellow').stroke('black');
+    let squareShape = new PIXI.GraphicsContext().poly(squarePts,true).fill('cyan').stroke('black');
+    let triangleShape = new PIXI.GraphicsContext().poly(triPts,true).fill('blue').stroke('black');
+
+
+
+    let d1 = hexPts[0].add(hexPts[5]).multiplyScalar(1+1/Math.sqrt(3));
+    let d2 = hexPts[0].add(hexPts[1]).multiplyScalar(1+1/Math.sqrt(3));
+
+    let grid = createGrid(new PIXI.Point(0,0), d1,d2, winBounds);
+    window.grid = grid;
+    let container = new PIXI.Container();
+    app.stage.addChild(container);
+
+    for(let gridItm of grid) {
+        const {p,i,j} = gridItm;
+        // if(!(i==0 && -4<=j && j<4)) continue;
+        if(i==0 && j==0) continue;
+        // if(!(i==-1 && j==0)) continue;
+        // if(gridItm.i== -1 && gridItm.j==0) continue;
+        let g = new PIXI.Graphics(hexShape); container.addChild(g);
+        g.position.copyFrom(p);
+
+        let q = [true,true,true];
+        let t = [true,true,false];
+
+        if(i==-1 && j==0) t[0] = false;
+        else if(i==1 && j==0) q[2] = false;
+        else if(i==1 && j==-1) q[1] = t[1] = false;
+        else if(i==0 && j==-1) q[0] = t[0] = t[1] = false;
+
+        for(let i=0; i<3; i++) {
+            let phi = Math.PI*2*i/6;
+            if(q[i]) {
+                g = new PIXI.Graphics(squareShape); container.addChild(g);
+                g.rotation = phi;
+                g.position.copyFrom(p);    
+            }
+            if(t[i]){
+                g = new PIXI.Graphics(triangleShape); container.addChild(g);
+                g.rotation = phi;
+                g.position.copyFrom(p);    
+            }
+        }    
+
+    }
+    let wheel = new PIXI.Container();
+    container.addChild(wheel);
+    let g = new PIXI.Graphics(hexShape); wheel.addChild(g);
+    for(let i=0; i<6; i++) {
+        let phi = Math.PI*2*i/6;
+        g = new PIXI.Graphics(squareShape); wheel.addChild(g);
+        g.rotation = phi;
+        g = new PIXI.Graphics(triangleShape); wheel.addChild(g);
+        g.rotation = phi;
+    }
+
+    // console.log(grid);
+ 
+
+    let gBounds = new PIXI.Graphics();
     drawRect(gBounds,-x1,-y1,x1,y1);
     gBounds.stroke({color:'green', width:2})
     app.stage.addChild(gBounds);
-    winBounds = {x0:-x1,y0:-y1,x1,y1};
-
+    
 
     PIXI.Ticker.shared.add(ticker=>{
         let t = performance.now() * 0.0005;
+        const dt = ticker.elapsedMS * 0.001;
+        if(param < paramTarget) {
+            param = Math.min(paramTarget, param + dt);
+        } else if(param > paramTarget) {
+            param = Math.max(paramTarget, param - dt);
+        }
+        wheel.rotation = Math.PI/6 * smoothStep(param, 0, 1);
         // foo(new PIXI.Point(-220,0),t)
         // console.log(grid)
        // dotSet.set(grid)
     });
-    /*
 
-    makeDraggable(app.stage);
-
-
-    let gc = new PIXI.GraphicsContext();
-    const unit = 55.0;
-    gc.moveTo(-unit,-unit);gc.lineTo(unit,-unit).lineTo(unit,unit).closePath()
-    gc.fill('orange');
-    gc.moveTo(-unit,-unit);gc.lineTo(unit,unit).lineTo(-unit,unit).closePath();
-    gc.fill('cyan');
-    let m = 10;
-    let curg;
-    for(let i=-m;i<=m;i++) {
-        for(let j=-m;j<=m;j++) {
-            let g = new PIXI.Graphics(gc);
-            g.position.set(2.05*unit*j, 2.05*unit*i);
-            if(i==0 && j==0) curg=g;
-            else app.stage.addChild(g);
-        }
-    }
-    app.stage.addChild(curg);
-
-    PIXI.Ticker.shared.add(ticker=>{
-        let t = performance.now() * 0.0005;
-        t -= Math.floor(t);
-        let q = smoothStep(t, 0, 0.1) - smoothStep(t, 0.5, 0.6);
-        curg.rotation = q * Math.PI/2
-
-    })
-    */
 }
 
+/*
 let dotSet = new DotSet();
 
 function foo(p0, phi) {
@@ -173,10 +163,14 @@ function foo(p0, phi) {
     // console.log(grid);
     dotSet.set(grid)
 }
+*/
+
 
 function setup() {
-    initPixiAndLoadTexture();
+    initPixi();
     document.addEventListener('keydown', (e) => {
+        if(e.key == '1') paramTarget = 0.0;
+        else if(e.key == '2')paramTarget = 1.0;
         console.log(e);
     })
 }
