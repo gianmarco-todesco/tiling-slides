@@ -119,7 +119,7 @@ let mat42 = new Matrix().translate(TRpts[1],1/goldenRatio).toPixi();
 let mat43 = new Matrix().translate(TLpts[1],-1).rotate(-180-36).toPixi();
 
 
-function build(i, level, parentMatrix) {
+function buildPatch(i, level, parentMatrix) {
     let pts = [tLpts,TLpts, tRpts, TRpts][i-1].map(p=>parentMatrix.apply(p));
 
     const width = app.canvas.width * 3, height = app.canvas.height * 3;
@@ -144,22 +144,22 @@ function build(i, level, parentMatrix) {
         let matrix = parentMatrix.clone().append(new PIXI.Matrix().scale(s,s));
         switch(i) {
             case 1:
-                build(1, level-1, matrix.clone().append(mat11));
-                build(2, level-1, matrix.clone().append(mat12));
+                buildPatch(1, level-1, matrix.clone().append(mat11));
+                buildPatch(2, level-1, matrix.clone().append(mat12));
             break;
             case 2:
-                build(3, level-1, matrix.clone().append(mat21));
-                build(4, level-1, matrix.clone().append(mat22));
-                build(2, level-1, matrix.clone().append(mat23));
+                buildPatch(3, level-1, matrix.clone().append(mat21));
+                buildPatch(4, level-1, matrix.clone().append(mat22));
+                buildPatch(2, level-1, matrix.clone().append(mat23));
             break;            
             case 3:
-                build(3, level-1, matrix.clone().append(mat31));
-                build(4, level-1, matrix.clone().append(mat32));
+                buildPatch(3, level-1, matrix.clone().append(mat31));
+                buildPatch(4, level-1, matrix.clone().append(mat32));
             break;    
             case 4:
-                build(1, level-1, matrix.clone().append(mat41));
-                build(2, level-1, matrix.clone().append(mat42));
-                build(4, level-1, matrix.clone().append(mat43));
+                buildPatch(1, level-1, matrix.clone().append(mat41));
+                buildPatch(2, level-1, matrix.clone().append(mat42));
+                buildPatch(4, level-1, matrix.clone().append(mat43));
 
         }
     }
