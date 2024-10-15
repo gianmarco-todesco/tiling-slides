@@ -28,12 +28,8 @@
 				<section >
                     <section><img class="stretch" src="images/lake.jpg"/></section>
                     <section><img class="stretch" src="images/rosone-fermo.png"/></section>
-                    <section><iframe class="stretch" src="pages/regular-tiling/index.html"></iframe></section>
+                    <!--section><iframe class="stretch" src="pages/regular-tiling/index.html"></iframe></section-->
                     <!-- section><img class="stretch" src="images/horses.png"/></section -->
-                    <section>
-                        <iframe class="stretch" src="/pages/horses/index.html"></iframe>
-                        <p class="credits">Horseman, 1946, M.C.Escher</p>
-                    </section>
                     <section>
                         <img src="images/smaller_and_smaller.png" class="r-stretch">
                         <p class="caption">Smaller & Smaller, M.C.Escher, 1956 </p>
@@ -43,17 +39,36 @@
                         
                     </section-->
                 </section>
-				<section data-background-iframe="pages/three-mirrors/index.html"
+                <section>
+                    <iframe class="stretch" src="/pages/horses/index.html"></iframe>
+                    <p class="credits">Horseman, 1946, M.C.Escher</p>
+                </section>
+                <section data-background-iframe="pages/three-mirrors/index.html"
                     data-background-interactive>
                 </section>
-                <section>
-                    <img src="images/17-wallpaper-groups.png" class="stretch"/>
+                <section data-background-image="/images/bg1.png">
+                    <h2>17 gruppi di simmetria</h2>
+                    <p>1891: Evgraf Fedorov</p>
+                    <p>1924: George Pólya</p>
+                    <p>
+                        <img src="/images/Evgraf_Fedorov_Mondadori.jpg" height="300px">
+                        <img src="/images/Polya.jpg" height="300px">
+                    </p>
                 </section>
                 <section>
-                    <div class="r-stretch" style="display:flex; gap:20px">
-                        <img src="images/pgg-1.jpg" />
-                        <img src="images/pgg-2.jpg" />    
-                    </div>
+                    <img src="/images/17-wallpaper-groups.png" class="stretch"/>
+                </section>
+                <section>
+                    <img class="stretch" src="/images/tipos-de-azulejos-alhambra.jpg">
+                    <p>L'Alhambra (Granada, Spagna) </p>
+                </section>
+                <section>
+                    <p>Immagini diverse con lo stesso gruppo di simmetria</p>
+                    <p>
+                        <img src="images/pgg-1.jpg" height="300px"/>
+                        <img src="images/pgg-2.jpg" height="300px"/>    
+
+                    </p>
                 </section>
                 <section data-background-iframe="pages/wallpapers/index.html"
                     data-background-interactive>
@@ -129,7 +144,7 @@
                     
                 </section>
                 <section>
-                    <iframe class="stretch" src="pages/penrose2/"></iframe>
+                    <iframe class="stretch" src="pages/penrose/"></iframe>
                 </section>
                 <section>
                     <iframe class="stretch" src="pages/penrose-inflation/"></iframe>
@@ -228,6 +243,12 @@
                     <h3>Il cappello</h3>
                     <iframe class="stretch" src="pages/the-hat"></iframe>
                 </section>
+                <section>
+                    <iframe class="stretch" src="pages/hat-metatiles"></iframe>
+                </section>
+                <section>
+                    <iframe class="stretch" src="pages/hat-morphing"></iframe>
+                </section>
 			</div>
 		</div>
 
@@ -244,7 +265,11 @@
                 slideNumber: true,
                 // Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ ] // RevealMarkdown, RevealHighlight, RevealNotes ]
-			});
+			}).then(()=>{
+                Reveal.getCurrentSlide().querySelectorAll('iframe').forEach(iframe => {
+                    iframe.contentWindow.postMessage('slide:start');
+                });
+            });
 		</script>
 	</body>
 </html>

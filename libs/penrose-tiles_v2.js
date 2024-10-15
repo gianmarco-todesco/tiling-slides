@@ -242,6 +242,26 @@ class Cell {
         container.addChild(itm);
         return itm;
     }
+
+    isThick() {
+        return this.key == "TL" || this.key == "TR";
+    }
+    getTween() {
+        return this.edges[0].tween?.cell;
+    }
+    getNeighbours() {
+        let lst = [];
+        for(let i=1; i<3; i++) 
+            if(this.edges[i].tween)
+                lst.push(this.edges[i].tween.cell);
+        let tween = this.getTween();
+        if(tween) {
+            for(let i=1; i<3; i++) 
+                if(tween.edges[i].tween)
+                    lst.push(tween.edges[i].tween.cell);
+        }
+        return lst;   
+    }
 }
 
 function areClose(p1,p2) {
@@ -373,3 +393,51 @@ function buildPatch(key, level, parentMatrix, halfWidth, halfHeight) {
     }
 }
 
+
+
+function computeChains(patch) {
+    let chains = [];
+    let touched = {}
+    function touch(cell) {
+        if(touched[cell.index]) throw "Cell already touched:" + cell.index;
+        touched[cell.index] = true;    
+        let tween = cell.getTween();
+        if(tween)
+        {
+            if(touched[tween.index]) throw "Tween already touched:" + tween.index;
+            touched[tween.index] = true;
+        }
+    }
+    for(let cell of patch.cells) {
+        let nodes = [];
+        if(!cell.isThick() || touched[cell.index]) continue;
+        let stack = [cell];
+        touch(cell);
+        while(stack.length>0) {
+            let cell = stack.pop();
+            let tween = cell.getTween();
+            let node = { cell, tween, links:[] };
+            let others = [];
+            for(let i=1;i<3;i++) others.push(cell.edges[i].tween?.cell);
+            if(tween)
+                for(let i=1;i<3;i++) others.push(tween.edges[i].tween?.cell);
+            for(let other of others) {
+                if(!other || !other.isThick()) continue;
+                node.links.push(other);
+                if(!touched[other.index]) {
+                    touch(other);
+                    stack.push(other);
+                }
+            }
+            nodes.push(node);
+        }
+        // check if it is complete
+        let err = nodes.filter(node=>(node.tween==null || node.links.length != 2));
+        if(err.length ==0)
+        {
+            chains.push(nodes)
+        }
+        
+    }
+    return chains;
+}

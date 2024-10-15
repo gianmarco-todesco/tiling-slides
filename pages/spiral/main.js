@@ -10,7 +10,7 @@ let app;
 async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
-        backgroundColor: '#aaaaaa',
+        backgroundColor: 'lightgray',
         resizeTo: window,
         antialias: true,
         autoDensity: true,

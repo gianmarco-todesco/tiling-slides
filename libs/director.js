@@ -8,6 +8,10 @@ class Act {
     backward() { return false; }
     tick() {}
     onkeydown(e) {}
+    onclick(x,y,e) {}
+    ondrag(dx,dy,e,startPos) {}
+    onclick(e) {}  
+    onrelease(e) {}  
 }
 
 class Director {
@@ -56,7 +60,36 @@ class Director {
             if(this.currentAct.backward()) return;
         }
         this.startAct(this.currentActIndex-1);
+    }
 
+    enablePointer() {
+        let oldx, oldy;
+        let startPos = new PIXI.Point();
+        const director = this;
+
+        function onClick(e) {
+            startPos.x = oldx = e.clientX;
+            startPos.y = oldy = e.clientY;
+            document.addEventListener('pointermove', onDrag);
+            document.addEventListener('pointerup', onDragEnd);
+            document.addEventListener('pointerleave', onDragEnd);
+            document.addEventListener('pointerout', onDragEnd);
+            if(director.currentAct) director.currentAct.onclick(oldx,oldy,e);
+        }
+        
+        function onDrag(e) {
+            let dx = e.clientX - oldx; oldx = e.clientX;
+            let dy = e.clientY - oldy; oldy = e.clientY;
+            if(director.currentAct) director.currentAct.ondrag(dx,dy,e,startPos);
+        }
+        function onDragEnd(e) {
+            document.removeEventListener('pointermove', onDrag);
+            document.removeEventListener('pointerup', onDragEnd);
+            document.removeEventListener('pointerleave', onDragEnd);
+            document.removeEventListener('pointerout', onDragEnd);            
+            if(director.currentAct) director.currentAct.onrelease(e);
+        }
+        document.addEventListener('pointerdown', onClick);
     }
     
 }
