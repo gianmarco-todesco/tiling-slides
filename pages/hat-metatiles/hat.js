@@ -92,7 +92,8 @@ class Metatile {
             child.matrix.prepend(tr);
         })
         this.metatilesBounds.forEach((q,i,a) => {
-            a[i] = q.map(qq=>tr.apply(qq))
+            q.bounds = q.bounds.map(qq=>tr.apply(qq));
+            // a[i] = q.map(qq=>tr.apply(qq))
         })
 
     }
@@ -118,8 +119,8 @@ const H_metatile = (()=>{
     matrix = matrix.append(new PIXI.Matrix(-1,0,0,1,0,0));
     m.addChild(matrix, H1_shape);
     m.setBounds(pts);
-    m.metatilesBounds.push(m.bounds);
     m.type = "H";
+    m.metatilesBounds.push({bounds:m.bounds, type:m.type});
     return m;
 })();
 
@@ -129,8 +130,8 @@ const P_metatile = (()=>{
     m.addChild(makeMatrix(0.5,0,0,-2), P_shape);
     m.addChild(makeMatrix(0.5,-Math.PI/3,1.5,-1), P_shape);
     m.setBounds([pt(0,0),pt(4,0),pt(3,2),pt(-1,2)]);
-    m.metatilesBounds.push(m.bounds);
     m.type = "P";
+    m.metatilesBounds.push({bounds:m.bounds, type:m.type});
     return m;
 })();
 
@@ -139,8 +140,8 @@ const F_metatile = (()=>{
     m.addChild(makeMatrix(0.5,0,0,-2), F_shape);
     m.addChild(makeMatrix(0.5,-Math.PI/3,1.5,-1), F_shape);
     m.setBounds([pt(0,0),pt(3,0),pt(3.5,1),pt(3,2),pt(-1,2)]);
-    m.metatilesBounds.push(m.bounds);
     m.type = "F";
+    m.metatilesBounds.push({bounds:m.bounds, type:m.type});
     return m;
 })();
 
@@ -148,8 +149,8 @@ const T_metatile = (()=>{
     let m = new Metatile();
     m.addChild(makeMatrix(0.5,-Math.PI/3,0.5,-1), T_shape);
     m.setBounds([pt(0,0),pt(3,0),pt(1.5,3)]);
-    m.metatilesBounds.push(m.bounds);
     m.type = "T";
+    m.metatilesBounds.push({bounds:m.bounds, type:m.type});
     return m;
 })();
 
@@ -311,7 +312,11 @@ function createChildren(patch, recenter = true) {
                 m.addChild(matrix, grandchild.shape);
             })
             child.metatile.metatilesBounds.forEach(q => {
-                m.metatilesBounds.push(q.map(qq=>child.matrix.apply(qq)))
+                let newBounds = {
+                    type:q.type, 
+                    bounds:q.bounds.map(qq=>child.matrix.apply(qq))
+                }
+                m.metatilesBounds.push(newBounds);
             });
         }
         m.setBounds(outline.map(p=>p));

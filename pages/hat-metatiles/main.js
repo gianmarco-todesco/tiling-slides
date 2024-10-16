@@ -246,27 +246,36 @@ class Act4 extends Act {
             'F': new PIXI.Point(400,200),            
         }
         let colors = {
-            'H':'#6688dd',
-            'P':'#8866dd',
-            'T':'#dd8866',
-            'F':'#66dd88'
+            'H':'#dd5544',
+            'P':'#55dd44',
+            'T':'#ddaa44',
+            'F':'#44ccee'
         };
 
         for(let key of ["H","P","T","F"]) {
             let metatile = metatiles[key];
+            let cnt = new PIXI.Container();
             let g = new PIXI.Graphics();
             g.alpha = 0.3
-            metatile.metatilesBounds.forEach(bounds=>{                
+            metatile.metatilesBounds.forEach(extbounds=>{      
+                let bounds = extbounds.bounds;          
                 g.poly(bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
-                    .fill(colors[key])
-                    .stroke({color:'gray', width:2});
+                    .fill(colors[extbounds.type])
                 
             })
+            cnt.addChild(g);
+            g = new PIXI.Graphics();
+            metatile.metatilesBounds.forEach(extbounds=>{      
+                let bounds = extbounds.bounds;          
+                g.poly(bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
+                    .stroke({color:'gray', width:2});                
+            })
             g.poly(metatile.bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
-                .stroke({color:'black', width:6});
-            model.container.addChild(g);
+                .stroke({color:colors[key], width:8});
+            cnt.addChild(g);
+            model.container.addChild(cnt);
             let off = offsets[key];
-            g.position.copyFrom(off);
+            cnt.position.copyFrom(off);
         }
     }
     onkeydown(e) {
@@ -290,13 +299,20 @@ class Act5 extends Act {
         model.clear();
         model.addMetaTile(metatiles.H, new PIXI.Matrix());
         let g = new PIXI.Graphics();        
-        metatiles.H.metatilesBounds.forEach(bound=>{
-            g.poly(bound,true).stroke({color:'blue', width:3});
+        metatiles.H.metatilesBounds.forEach(extbound=>{
+            let bounds = extbound.bounds;
+            g.poly(bounds,true).stroke({color:'blue', width:3});
         })
         model.container.addChild(g);
-        model.addMetaTileBounds(metatiles.H, new PIXI.Matrix());
-        
+        model.addMetaTileBounds(metatiles.H, new PIXI.Matrix());        
     }
+    onkeydown(e) {
+        if(e.key == '1') this.setLevel(1);
+        else if (e.key == '2') this.setLevel(2);
+        else if (e.key == '3') this.setLevel(3);
+        else if (e.key == '0') this.setLevel(0);
+    }
+
 }
 
 
@@ -318,12 +334,8 @@ function buildScene() {
     console.log("model created in "+dt+"ms");
 
     director = new Director(model);
-    director.addAct(new Act4());
-    director.addAct(new Act3());
-    
-    
     director.addAct(new Act1());
-    director.addAct(new Act2());
+    // director.addAct(new Act2());
     director.addAct(new Act3());
     director.addAct(new Act4());
     director.addAct(new Act5());
