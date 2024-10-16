@@ -208,14 +208,11 @@ class Act3 extends Act {
         
     }
     onkeydown(e) {
-        console.log("qui", e)
         if(this.curKey != this.targetKey || this.param != 0.0 && this.param != 1.0)
             return;
         let targetKey = {'1':'P','2':'T','3':'F'}[e.key];
         if(targetKey === undefined) return;
         this.targetKey = targetKey == this.targetKey ? "" : targetKey;
-    
-        
     }
 }
 
@@ -231,27 +228,42 @@ class Act4 extends Act {
         const model = this.model;
         model.clear();
 
-        let scaleFactor = 1/3**level;
+        let scaleFactor = 1/2.598076**level;
 
         let patch = model.patches[level];
-        let metatiles = this.metatiles = createChildren(patch, false);
+        let metatiles = this.metatiles = createChildren(patch, true);
 
-        let offsets = {
+        /* let offsets = {
             'H': new PIXI.Point(-550,-10),
             'P': new PIXI.Point(-600,100),
-            'T': new PIXI.Point(-150,0),
-            'F': new PIXI.Point(-500,-90),
-            
+            'T': new PIXI.Point(-150+200,-200),
+            'F': new PIXI.Point(-500+500,-90+200),            
+        } */
+        let offsets = {
+            'H': new PIXI.Point(-400,-200),
+            'P': new PIXI.Point(-400,300),
+            'T': new PIXI.Point(140,-250),
+            'F': new PIXI.Point(400,200),            
         }
+        let colors = {
+            'H':'#6688dd',
+            'P':'#8866dd',
+            'T':'#dd8866',
+            'F':'#66dd88'
+        };
+
         for(let key of ["H","P","T","F"]) {
             let metatile = metatiles[key];
             let g = new PIXI.Graphics();
+            g.alpha = 0.3
             metatile.metatilesBounds.forEach(bounds=>{                
                 g.poly(bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
-                    .stroke({color:'blue', width:1.5});
+                    .fill(colors[key])
+                    .stroke({color:'gray', width:2});
+                
             })
             g.poly(metatile.bounds.map(p=>p.multiplyScalar(scaleFactor)),true)
-                .stroke({color:'magenta', width:3});
+                .stroke({color:'black', width:6});
             model.container.addChild(g);
             let off = offsets[key];
             g.position.copyFrom(off);
@@ -306,11 +318,15 @@ function buildScene() {
     console.log("model created in "+dt+"ms");
 
     director = new Director(model);
-    director.addAct(new Act5());
     director.addAct(new Act4());
+    director.addAct(new Act3());
+    
+    
     director.addAct(new Act1());
     director.addAct(new Act2());
     director.addAct(new Act3());
+    director.addAct(new Act4());
+    director.addAct(new Act5());
 
 
     // p1 = patch.createObject(app);
