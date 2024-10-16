@@ -22,7 +22,7 @@ async function initPixiAndLoadTexture() {
     app.stage.position.set(app.canvas.width/2,app.canvas.height/2);
 
 
-    buildScenes();
+    buildScene();
 }
 
 function setup() {
@@ -42,7 +42,124 @@ function cleanup() {
 
 let g1,g2;
 
-function buildScenes() {
+
+
+const vert = `in vec2 aPosition;
+out vec2 vTextureCoord;
+uniform vec4 uInputSize;
+uniform vec4 uOutputFrame;
+uniform vec4 uOutputTexture;
+
+vec4 filterVertexPosition( void )
+{
+    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;
+    
+    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;
+    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;
+
+    return vec4(position, 0.0, 1.0);
+}
+
+vec2 filterTextureCoord( void )
+{
+    return aPosition * (uOutputFrame.zw * uInputSize.zw);
+}
+
+void main(void)
+{
+    gl_Position = filterVertexPosition();
+    vTextureCoord = filterTextureCoord();
+}`;
+
+const frag = `
+in vec2 vTextureCoord;
+in vec4 vColor;
+
+uniform sampler2D uTexture;
+uniform float uTime;
+
+void main(void)
+{
+    vec2 uvs = vTextureCoord.xy;
+
+    float x = 0.3*sin(uTime*0.5);
+    vec2 disp = vec2(x,0.0);
+
+    vec4 v1 = texture2D(uTexture, vTextureCoord );
+
+    vec4 v2 = texture2D(uTexture, vTextureCoord + disp);
+
+    vec4 fg = v1.r==v2.r ? vec4(0.0,0.0,0.0,0.0) : vec4(1.0,0.0,0.0,0.0);
+    
+    // fg = fg + texture2D(uTexture, vTextureCoord + vec2(0.0, sin(uTime)));
+    // fg.r = uvs.y + sin(uTime);
+    gl_FragColor = fg; // vec4(1.0,0.0,0.0,1.0);
+}
+`;
+
+let renderTexture;
+let background;
+
+async function buildScene() {
+    
+
+    const myRenderTexture = PIXI.RenderTexture.create({
+        width:2048, 
+        height:2048, 
+        // autoGenerateMipmaps:true
+    });
+
+    let c = new PIXI.Container();
+    for(let i=0;i<16;i++) {
+        for(let j=0;j<16;j++) {
+            let g = new PIXI.Graphics().circle(0,0,50).stroke({color:'white', width:4});
+            c.addChild(g);
+            g.position.x = 2048*(i+0.5)/16;
+            g.position.y = 2048*(j+0.5)/16;
+                        
+        }
+    }
+    app.renderer.render({
+        target:myRenderTexture, container:c,
+        antialias:true
+    });
+
+    // myRenderTexture.source.updateMipmaps();
+
+
+    const texture = await PIXI.Assets.load('https://pixijs.com/assets/bg_grass.jpg');
+
+    background = PIXI.Sprite.from(myRenderTexture);
+    background.scale.set(0.25,0.25);
+    background.anchor.set(0.5,0.5)
+    app.stage.addChild(background);
+
+
+    const filter = new PIXI.Filter({
+        glProgram: new PIXI.GlProgram({
+            fragment:frag,
+            vertex:vert,
+        }),
+        resources: {
+            timeUniforms: {
+                uTime: { value: 0.0, type: 'f32' },
+            },
+        },
+    });
+
+    background.filters = [filter];
+
+    // Animate the filter
+    app.ticker.add((ticker) =>
+    {
+        filter.resources.timeUniforms.uniforms.uTime += 0.04 * ticker.deltaTime;
+    });
+    
+    
+}
+
+
+function buildScenes_old() {
     let r = 200;
     g1 = new PIXI.Graphics().poly([
         {x:-r,y:-r},{x:r,y:-r},{x:r,y:r},{x:-r,y:r}

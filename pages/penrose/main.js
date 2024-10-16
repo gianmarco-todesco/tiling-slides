@@ -5,6 +5,10 @@ const slide = {
 let app;
 let model;
 let director;
+let animations = new AnimationManager();
+let maxScale = Infinity, minScale = 0.001;
+
+
 
 async function initPixi() {
     app = new PIXI.Application();
@@ -61,7 +65,7 @@ class Model {
         let globalMatrix = new PIXI.Matrix().translate(0,-y).scale(s,s);
         const width = app.canvas.width * 3, height = app.canvas.height * 3;
         let startTime = performance.now();
-        let patch = buildPatch('tL',12,globalMatrix, width*0.4, height*0.4);
+        let patch = buildPatch('tL',13,globalMatrix, width*0.4, height*0.4);
         patch.cells.forEach((cell,i) => cell.index = i);
         this.patch = patch;
         console.log("patch:", performance.now() - startTime);
@@ -69,11 +73,11 @@ class Model {
 
         startTime = performance.now();
         let chains = computeChains(patch);
-        let H = window.H = {}
-        chains.forEach(chain => H[chain.length] = chain);
         console.log("chains: ", performance.now() - startTime);
         this.chains = chains;
         
+        this.buildSimplePrototiles();
+        this.chain = [];
         // startTime = performance.now();    
         // patch.placeTiles(app.stage, 2000);
         this.computeFirstCells();
@@ -104,12 +108,56 @@ class Model {
         cell.placeTile(container);
         cell.getTween().placeTile(container);
     }
+
+    buildSimplePrototiles() {
+        let prototiles = this.simplePrototiles = {}
+        for(let key of ['tL','TL','tR','TR']) {
+            let pts = ptsTable[key];
+            let p = prototiles[key] = new PIXI.GraphicsContext();
+            p.poly(pts,true).fill('white');
+            p.poly([pts[2],pts[0],pts[1]],false).stroke({color:'gray', width:4});
+        }
+    }
+
+    hideChain() {
+        this.chain.forEach(d=>d.destroy());
+        this.chain.length = 0;
+    }
+    showChain(length) {
+        this.hideChain();
+        if(this.chains[length] === undefined) return;
+        const prototiles = this.simplePrototiles;
+        let chain = this.chains[length].chain;
+        let index = 0;
+        const me = this;
+        let g1, g2;
+        let alpha = 0.0;
+
+        animations.run(e=>{            
+            if(index>=chain.length) return false;
+            let node = chain[index];
+            let cell = node.cell, tween = node.tween;
+            g1 = new PIXI.Graphics(prototiles[cell.key]);
+            g1.setFromMatrix(cell.matrix);
+            app.stage.addChild(g1);
+            me.chain.push(g1);
+            g2 = new PIXI.Graphics(prototiles[tween.key]);
+            g2.setFromMatrix(tween.matrix);
+            app.stage.addChild(g2);
+            me.chain.push(g2);
+            g1.alpha = g2.alpha = 0.7;
+            index++;
+            return true;
+        });
+    }
+    
 }
 
 class Act1 extends Act {
     constructor() { super(); }
     start() {
         app.stage.scale.set(30,30);
+        minScale = 3.38;
         this.model.placeFirstCells();
         let patch = this.model.patch;
         // patch.placeTiles(app.stage, 2000);
@@ -119,36 +167,77 @@ class Act1 extends Act {
             if(cell.index == this.model.firstCell.index || 
                 cell.index == this.model.secondCell.index) continue;
             if(cell.itm) continue;
-            let itm = cell.placeTile(app.stage);
             let disp = cell.center.subtract(center);
             let d = disp.magnitude();
+            if(d>300) continue;
+            
+            let itm = cell.placeTile(app.stage);
             itm.visible = false;
             items.push({cell, dist:d});
             //let mat = new PIXI.Matrix().translate(disp.x*2,disp.y*2).append(cell.matrix);
             //itm.setFromMatrix(mat);
         }
         this.t0 = performance.now();
+        this.state = 0;
     }
-    tick() {
+
+    onkeydown(e) {
+        if(e.key == '1') {
+            this.t0 = performance.now();
+            this.state = 1;
+        } else if(e.key == '2') {
+            this.model.showChain([25])
+        } else if(e.key == '3') {
+            this.model.showChain([215])
+        } else if(e.key == '4') {
+            this.model.showChain([855])
+        }
+    }
+
+    grow() {
         let t = (performance.now()-this.t0) * 0.001;
-        let center = this.model.firstCell.center;
+        t = Math.exp(t);
+        // let center = this.model.firstCell.center;
+        let done = true;
         this.items.forEach(itm => {
             const {cell, dist} = itm;
+            // if(dist > 4100) return;
+            if(cell.key.endsWith('R')) return;
+            let tween = cell.getTween();
             let param = dist - t;
             if(param <= 0) {
                 cell.itm.visible = true;
+                cell.itm.alpha = 1.0;
                 cell.itm.setFromMatrix(cell.matrix);
-            } else if(param < 10) {
-                cell.itm.visible = true;
-                let disp = cell.center.subtract(center).multiplyScalar(param);
-                let mat = new PIXI.Matrix().translate(disp.x*2,disp.y*2).append(cell.matrix);
-                cell.itm.setFromMatrix(mat);
+                if(tween && tween.itm) {
+                    tween.itm.visible = true;
+                    tween.itm.alpha = 1.0
+                    tween.itm.setFromMatrix(tween.matrix);
+                }
+            } else {
+                done = false;
+                if(param < 1) {
+                    let alpha = 1.0 - param;
+                    cell.itm.visible = true;
+                    cell.itm.alpha = alpha;
+                    if(tween && tween.itm) {
+                        tween.itm.visible = true;
+                        tween.itm.alpha = alpha;
+                    }
+                }
             } 
         })
+        if(done) this.state = 2;
+
+    }
+    tick() {
+        if(this.state == 1) this.grow();
+
 
     }
 }
 
+//-----------------------------------------------
 class Act2 extends Act {
     constructor() { super(); }
     start() {
@@ -171,9 +260,12 @@ class Act2 extends Act {
         this.c1 = c1;
         this.c2 = c2;
         c2.blendMode = 'add';
+        let sc = 3.2;
+        app.stage.scale.set(sc,sc);
+        minScale = sc;
         
         for(let cell of this.model.patch.cells) {
-            if(cell.center.magnitude()<100) {
+            if(cell.center.magnitude()<350) {
                 let g = new PIXI.Graphics(prototiles["1_"+cell.key]);
                 g.setFromMatrix(cell.matrix);
                 c1.addChild(g);
@@ -182,14 +274,25 @@ class Act2 extends Act {
                 c2.addChild(g);
             }
         }
+        
+        /*
+        app.stage.on('globalpointermove', (e) => {
+            c2.position.set(e.global.x, e.global.y)
+        })
+            */
+
+        
         document.addEventListener('pointerdown', e=>{
             let x,y;
             function drag(e) {
                 let dx = e.clientX - x; x = e.clientX;
                 let dy = e.clientY - y; y = e.clientY;
-                c2.position.x += dx;
-                c2.position.y += dy;
-                
+                let amount = 1.0/app.stage.scale.x;
+                let newx = c2.position.x + dx * amount;
+                let newy = c2.position.y + dy * amount;                
+                // setTimeout(()=>{c2.position.set(newx,newy)},0)
+                // c2.position.set(newx,newy);  
+                c2.position.x = newx;
             }
             function dragEnd(e) {
                 document.removeEventListener('pointermove', drag);
@@ -201,6 +304,8 @@ class Act2 extends Act {
             x = e.clientX;
             y = e.clientY;
         })
+        
+            
     }
 
     tick() {
@@ -208,14 +313,98 @@ class Act2 extends Act {
     }
 }
 
+class Act3 extends Act {
+    constructor() { super(); }
+    start() {
+        app.stage.removeChildren().forEach(d=>d.destroy())
+        let prototiles = {}
+        for(let key of ['tL','TL','tR','TR']) {
+            let g = new PIXI.GraphicsContext();
+            g.poly(ptsTable[key],true).fill(key.startsWith('T')?'#FF0000FF':'#787878FF');
+            prototiles["1_"+key] = g;
+            g = new PIXI.GraphicsContext();
+            g.poly(ptsTable[key],true).fill(key.startsWith('T')?'#00FFFFFF':'#777777FF');
+            prototiles["2_"+key] = g;            
+        }
+        let c1 = new PIXI.Container();
+        let c2 = new PIXI.Container();
+        app.stage.addChild(c1);
+        app.stage.addChild(c2);
+        c1.position.x = 0;
+        c2.position.x = 0;
+        this.c1 = c1;
+        this.c2 = c2;
+        c2.blendMode = 'add';
+        let sc = 3.2;
+        app.stage.scale.set(sc,sc);
+        minScale = sc;
+        
+
+        let g1 = new PIXI.Graphics();
+        let g2 = new PIXI.Graphics();
+        for(let cell of this.model.patch.cells) {
+            if(cell.center.magnitude()<350) {
+                let pts = ptsTable[cell.key].map(p=>cell.matrix.apply(p));
+                g1.poly(pts,true);
+                g1.fill(cell.key.startsWith('T')?'#FF0000FF':'#787878FF');
+                g2.poly(pts,true);
+                g2.fill(cell.key.startsWith('T')?'#00FFFFFF':'#777777FF');
+            }
+        }
+        c1.addChild(g1);
+        c2.addChild(g2);
+                
+        /*
+        app.stage.on('globalpointermove', (e) => {
+            c2.position.set(e.global.x, e.global.y)
+        })
+            */
+
+        
+        document.addEventListener('pointerdown', e=>{
+            let x,y;
+            function drag(e) {
+                let dx = e.clientX - x; x = e.clientX;
+                let dy = e.clientY - y; y = e.clientY;
+                let amount = 1.0/app.stage.scale.x;
+                let newx = c2.position.x + dx * amount;
+                let newy = c2.position.y + dy * amount;                
+                // setTimeout(()=>{c2.position.set(newx,newy)},0)
+                // c2.position.set(newx,newy);  
+                c2.position.x = newx;
+            }
+            function dragEnd(e) {
+                document.removeEventListener('pointermove', drag);
+                document.removeEventListener('pointerup', dragEnd);
+                
+            }
+            document.addEventListener('pointermove', drag);
+            document.addEventListener('pointerup', dragEnd);
+            x = e.clientX;
+            y = e.clientY;
+        })
+        
+            
+    }
+
+    tick() {
+        // this.c1.position.x = 200*Math.sin(performance.now()*0.0001)
+    }
+}
+
+//-----------------------------------------------
+
 
 function buildScene() {
     model = new Model();
     director = new Director(model);
-    director.addAct(new Act2())
     director.addAct(new Act1())
+    director.addAct(new Act3())
 
 
+    PIXI.Ticker.shared.add((ticker)=>{
+        animations.tick();
+    });
     
     /*
     let y = ptsTable['tL'][1].y * 0.8;
@@ -237,7 +426,7 @@ function buildScene() {
     document.addEventListener('wheel', (e)=>{
         console.log(e);
         let scale = app.stage.scale.x;
-        scale = Math.max(0.1, Math.min(30.0, scale * Math.exp(-e.deltaY*0.002)));
+        scale = Math.max(minScale, Math.min(maxScale, scale * Math.exp(-e.deltaY*0.002)));
         app.stage.scale.set(scale,scale);
         console.log(scale);
     })
@@ -251,10 +440,7 @@ function buildScene() {
 
 
 function showChain(chain) {
-    for(let node of chain) {
-        node.cell.itm.alpha = 0.3;
-        node.tween.itm.alpha = 0.3;        
-    }
+    
     /*
     let pts = [];
     for(let node of chain) {

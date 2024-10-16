@@ -60,39 +60,40 @@ function createProtoTile(index) {
     pts.slice(1).forEach(p=>gc.lineTo(p.x,p.y));
     gc.closePath();
     gc.fill(color);
+    let innerStrokeWidth = 16;
     const r1 = unit * 0.25, r2 = unit * 0.25;
     const r3 = unit - r1;
     if(index == 1) {
         gc.moveTo(pts[1].x + r1, pts[1].y);
         gc.arc(pts[1].x, pts[1].y, r1, 0, -Math.PI*72/180, true);
-        gc.stroke({color:'green', width:8, cap:"butt"})
+        gc.stroke({color:'green', width:innerStrokeWidth, cap:"butt"})
         gc.moveTo(pts[2].x - r2, pts[2].y);
         gc.arc(pts[2].x, pts[2].y, r2, Math.PI, Math.PI + Math.PI*72/180);
-        gc.stroke({color:'pink', width:8, cap:"butt"})
+        gc.stroke({color:'pink', width:innerStrokeWidth, cap:"butt"})
     } else if(index == 3) {
         gc.moveTo(pts[1].x - r1, pts[1].y);
         gc.arc(pts[1].x, pts[1].y, r1, Math.PI, Math.PI + Math.PI*72/180);
-        gc.stroke({color:'green', width:8, cap:"butt"})
+        gc.stroke({color:'green', width:innerStrokeWidth, cap:"butt"})
         gc.moveTo(pts[2].x + r2, pts[2].y);
         gc.arc(pts[2].x, pts[2].y, r2, 0, -Math.PI*72/180, true);
-        gc.stroke({color:'pink', width:8, cap:"butt"})
+        gc.stroke({color:'pink', width:innerStrokeWidth, cap:"butt"})
 
     } else if(index == 2) {
         gc.moveTo(pts[1].x + r3, pts[1].y);
         gc.arc(pts[1].x, pts[1].y, r3, 0, -Math.PI*36/180, true);
-        gc.stroke({color:'green', width:8, cap:"butt"})
+        gc.stroke({color:'green', width:innerStrokeWidth, cap:"butt"})
 
         gc.moveTo(pts[2].x - r2, pts[2].y);
         gc.arc(pts[2].x, pts[2].y, r2, Math.PI, Math.PI + Math.PI*36/180);
-        gc.stroke({color:'pink', width:8, cap:"butt"})
+        gc.stroke({color:'pink', width:innerStrokeWidth, cap:"butt"})
     } else if(index == 4) {
         gc.moveTo(pts[1].x - r3, pts[1].y);
         gc.arc(pts[1].x, pts[1].y, r3, Math.PI, Math.PI + Math.PI*36/180);
-        gc.stroke({color:'green', width:8, cap: "butt"})
+        gc.stroke({color:'green', width:innerStrokeWidth, cap: "butt"})
 
         gc.moveTo(pts[2].x + r2, pts[2].y);
         gc.arc(pts[2].x, pts[2].y, r2, 0, -Math.PI*36/180, true);
-        gc.stroke({color:'pink', width:8, cap:"butt"})
+        gc.stroke({color:'pink', width:innerStrokeWidth, cap:"butt"})
 
     }
     gc.moveTo(pts[2].x, pts[2].y);
@@ -308,6 +309,17 @@ class CellPatch {
 }
 // see: https://www.projectrhea.org/rhea/index.php/MA271Fall2020Walther_Topic27_Inflation_and_Deflation
 
+function concatCells(...patches) {
+    let a = null;
+    for(let patch of patches) {
+        if(patch != null) {
+            if(a==null) a = patch.cells;
+            else a = a.concat(patch.cells);
+        }
+    }
+    return a;
+}
+
 
 function buildPatch(key, level, parentMatrix, halfWidth, halfHeight) {
     let pts = ptsTable[key].map(p=>parentMatrix.apply(p));
@@ -334,15 +346,16 @@ function buildPatch(key, level, parentMatrix, halfWidth, halfHeight) {
             // tL
             let patch1 = buildPatch('tL', level-1, matrix.clone().append(mat11));
             let patch2 = buildPatch('TL', level-1, matrix.clone().append(mat12));
-            patch1.joinEdge(2,patch2,2);
+            if(patch1 && patch2) patch1.joinEdge(2,patch2,2);
             let patch = new CellPatch();
-            patch.cells = patch1.cells.concat(patch2.cells);
-
-            patch.edges.push(
-                patch1.edges[1],
-                patch2.edges[0],
-                patch2.edges[1].concat(patch1.edges[0])
-            );
+            patch.cells = concatCells(patch1, patch2);
+            if(patch1 && patch2) {
+                patch.edges.push(
+                    patch1.edges[1],
+                    patch2.edges[0],
+                    patch2.edges[1].concat(patch1.edges[0])
+                );
+            }
             
             return patch;
         } else if(key == 'TL') {
@@ -396,7 +409,7 @@ function buildPatch(key, level, parentMatrix, halfWidth, halfHeight) {
 
 
 function computeChains(patch) {
-    let chains = [];
+    let chainTable = {}
     let touched = {}
     function touch(cell) {
         if(touched[cell.index]) throw "Cell already touched:" + cell.index;
@@ -435,9 +448,16 @@ function computeChains(patch) {
         let err = nodes.filter(node=>(node.tween==null || node.links.length != 2));
         if(err.length ==0)
         {
-            chains.push(nodes)
+            let c = nodes.map(node=>node.cell.center.add(node.tween.center))
+                .reduce((a,b)=>a.add(b)).multiplyScalar(0.5/nodes.length);
+            let r = c.magnitude();
+            let chainLength = nodes.length;
+            if(chainTable[chainLength]===undefined ||
+                r<chainTable[chainLength].r) {
+                chainTable[chainLength] = {chain:nodes, r}
+            }
         }
         
     }
-    return chains;
+    return chainTable;
 }

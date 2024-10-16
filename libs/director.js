@@ -93,3 +93,42 @@ class Director {
     }
     
 }
+
+
+
+class AnimationManager {
+    constructor() {
+        this.lst = [];
+    }
+
+    run(f,duration=1,endcb=null) {
+        let t = performance.now() * 0.001;
+        this.lst.push({
+            f, startTime : t, lastTime : t, duration, endcb
+        })
+    }
+    tick(dt) {
+        let gt = performance.now() * 0.001;
+        for(let i=0; i<this.lst.length;) {
+            let animation = this.lst[i];      
+            let t = gt - animation.startTime;
+            let e = {
+                t,
+                param: Math.min(1.0, t/animation.duration),
+                dt:t-animation.lastTime
+            };      
+            let ret = animation.f(e);
+            if(ret === undefined) ret = t < animation.duration;
+            if(!ret) {
+                let endcb = animation.endcb;
+                this.lst.splice(i,1);
+                console.log("Animation finished ("+this.lst.length+" left)")
+                if(endcb) endcb();
+            }
+            else {
+                animation.lastTime = t;
+                i++;
+            } 
+        }
+    }
+}
