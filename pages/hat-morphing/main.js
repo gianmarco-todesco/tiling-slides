@@ -295,7 +295,7 @@ class Act2 extends Act {
         let sc = new ShapeCollector();
         model.sys.H8.accept(sc);
         this.shapes = sc.shapes;
-        this.scaleFactor = 10;
+        this.scaleFactor = 20;
 
 
         // let pts = this.pts = model.getPoints(model.pts).map(p=>baseMatrix.apply(p));    
@@ -328,7 +328,7 @@ class Act2 extends Act {
         this.container = null;
         this.prototiles.forEach(p=>p.destroy());
         this.prototiles.length = 0;
-        
+
     }
 
     setValue(value) {
@@ -347,6 +347,7 @@ class Act2 extends Act {
         let dir = p1.subtract(p0);
         let theta = Math.atan2(dir.y,dir.x);
 
+        theta = 0;
         this.baseMatrix = new PIXI.Matrix().scale(scaleFactor, scaleFactor).rotate(-theta);
         this.baseMatrix.translate(0,400)
         this.updatePrototile()        
