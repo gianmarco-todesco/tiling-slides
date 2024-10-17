@@ -49,7 +49,7 @@ function addDot(p) {
     return g;
 }
 
-function foo(level) {
+function foo_obsolete(level) {
     // clear
     while(app.stage.children.length>0) {
         app.stage.children.at(-1).destroy();
@@ -64,6 +64,7 @@ function foo(level) {
     matrix = global.clone().append(new PIXI.Matrix().rotate(Math.PI).translate(0,d.y));
     buildPatch(4,level,matrix);
 
+
     global =  new PIXI.Matrix().scale(s,s).translate(200,0);
 
     d = tLpts[1].add(tLpts[2]).multiplyScalar(0.5);
@@ -71,13 +72,15 @@ function foo(level) {
     buildPatch(1,level,matrix);
     matrix = global.clone().append(new PIXI.Matrix().rotate(Math.PI).translate(0,d.y));
     buildPatch(3, level,matrix);
+
+
 }
 
 let dot;
 
 function q(p) {dot.position.copyFrom(p)}
 
-function foo2(level) {
+function foo2_obsolete(level) {
     // clear
     while(app.stage.children.length>0) {
         app.stage.children.at(-1).destroy();
@@ -174,14 +177,34 @@ function createRhomb(tT, level) {
     let key = tT + 'L';
     
     let d = lerp(ptsTable[key][1], ptsTable[key][2], 0.5);
-    let matrix = new PIXI.Matrix().translate(0,-d.y);
-    let patch = buildPatch(key,level,matrix);
+    let topMatrix = new PIXI.Matrix().translate(0,-d.y);
+    let patch = buildPatch(key,level,topMatrix);
     patch.placeTiles(container);
     patch.placeTweens(container);
-    matrix = new PIXI.Matrix().rotate(Math.PI).translate(0,d.y);
-    patch = buildPatch(tweenKeyTable[key],level,matrix);
+    let bottomMatrix = new PIXI.Matrix().rotate(Math.PI).translate(0,d.y);
+    patch = buildPatch(tweenKeyTable[key],level,bottomMatrix);
     patch.placeTiles(container);
     patch.placeTweens(container);
+
+    if(level>0) {
+        let p0 = topMatrix.apply(ptsTable[key][1]);
+        let p1 = topMatrix.apply(ptsTable[key][0]);
+        let p2 = topMatrix.apply(ptsTable[key][2]);
+        let p3 = p0.add(p2).subtract(p1);
+        let pts = [p0,p1,p2,p3];
+        let g = new PIXI.Graphics();
+        for(let i=0; i<4; i++) {
+            let pa = pts[i], pb = pts[(i+1)%4];
+            let m = 8;
+            for(let j = 0; j<m; j++) {
+                let pc = lerp(pa,pb,j/m);
+                let pd = lerp(pa,pb,(j+0.5)/m);
+                g.moveTo(pc.x,pc.y); g.lineTo(pd.x,pd.y);                
+            }
+        }        
+        g.stroke({color:'blue', width:6});
+        container.addChild(g);    
+    }
     
     app.stage.addChild(container);
     return container;
@@ -199,11 +222,13 @@ function buildScene() {
 function foo(level) {
     if(c1) c1.destroy();
     if(c2) c2.destroy();
+    let scale = app.canvas.height * 0.001;
+    let dx = app.canvas.width * 0.2;
     c1 = createRhomb('t',level);
-    c1.scale.set(0.6,0.6)
-    c1.position.x -= 150;
+    c1.scale.set(scale, scale)
+    c1.position.x -= dx;
     c2 = createRhomb('T',level);
-    c2.scale.set(0.6,0.6);
-    c2.position.x += 100;
+    c2.scale.set(scale, scale);
+    c2.position.x += dx;
     
 }

@@ -8,6 +8,24 @@
                 margin:0;
                 padding:0;
                 background-color: white;
+                height:100%;
+                overflow:hidden;
+            }
+            #animation-container {
+                height:100%;
+                border:none;
+                margin:0;
+                padding:0;
+            }
+            canvas {
+                border:none;
+                height:100%;
+            }
+            #group-menu {
+                position:absolute;
+                left:10px;
+                top:10px;
+                font-size:30px;
             }
         </style>
         <link rel="stylesheet" href="style.css">
@@ -20,12 +38,6 @@
         <script src="main.js"></script>
     </head>
     <body>
-        <div id="animation-container">
-            <canvas id="renderCanvas"></canvas>
-
-    
-        </div>
-
-        
+        <canvas id="renderCanvas"></canvas>    
     </body>
 </html>

@@ -107,7 +107,7 @@ function initialize() {
 
     initPointerEvents(gl.canvas);
     createControls();
-    initButtons();
+    //initButtons();
 
     prova =  new DynamicColoredShape({ 
         gl, n: 1000, verb: gl.LINES});
@@ -198,6 +198,7 @@ function setCurrentGroup(name) {
     paintStrokes();
     if(globalSymmetrySymbols)
         globalSymmetrySymbols.clear();
+    clearAll();
 }
 
 

@@ -60,6 +60,13 @@ function addDot(p) {
 
 class Model {
     constructor() {
+        this.snapshotLayer = new PIXI.Container();
+        app.stage.addChild(this.snapshotLayer);
+        this.container = new PIXI.Container();
+        app.stage.addChild(this.container);
+        this.chainsContainer = new PIXI.Container();
+        app.stage.addChild(this.chainsContainer);
+        
         let y = ptsTable['tL'][1].y * 0.8;
         let s = 5;
         let globalMatrix = new PIXI.Matrix().translate(0,-y).scale(s,s);
@@ -100,7 +107,7 @@ class Model {
     }
 
     placeFirstCells() {
-        let container = app.stage;
+        let container = this.container;
         let cell = this.firstCell;
         cell.placeTile(container);
         cell.getTween().placeTile(container);
@@ -124,6 +131,7 @@ class Model {
         this.chain.length = 0;
     }
     showChain(length) {
+        animations.clear();
         this.hideChain();
         if(this.chains[length] === undefined) return;
         const prototiles = this.simplePrototiles;
@@ -139,16 +147,62 @@ class Model {
             let cell = node.cell, tween = node.tween;
             g1 = new PIXI.Graphics(prototiles[cell.key]);
             g1.setFromMatrix(cell.matrix);
-            app.stage.addChild(g1);
+            me.chainsContainer.addChild(g1);
             me.chain.push(g1);
             g2 = new PIXI.Graphics(prototiles[tween.key]);
             g2.setFromMatrix(tween.matrix);
-            app.stage.addChild(g2);
+            me.chainsContainer.addChild(g2);
             me.chain.push(g2);
             g1.alpha = g2.alpha = 0.7;
             index++;
             return true;
         });
+    }
+
+    /*
+    createWholeTiling() {
+        let g = new PIXI.Graphics();
+        this.patch.cells.forEach(cell=>{
+
+            let pts = ptsTable[cell.key].map(p=>cell.matrix.apply(p));
+            let center = pts.reduce((a,b)=>a.add(b)).multiplyScalar(1/pts.length);
+            if(center.magnitude()<100) {
+                g.poly(pts,true).fill(cell.key.startsWith('T')?'orange':'cyan');
+                g.poly([pts[1],pts[0],pts[2]],false).stroke({color:'black', width:0});
+            }
+        });
+        return g;
+    }
+    */
+
+    takeSnapshot() {
+        let sz = 4096;
+        let worldSz = 600.0;
+        if(this.snapshotTexture) this.snapshotTexture.destroy();
+        const myRenderTexture = this.snapshotTexture = PIXI.RenderTexture.create({
+            width:sz, 
+            height:sz, 
+            antialias:true,
+            resolution:1
+            // autoGenerateMipmaps:true
+        });
+        this.container.scale.set(sz/worldSz,sz/worldSz)
+        this.container.position.set(sz/2, sz/2);
+        app.renderer.render({
+            target:myRenderTexture, container:this.container,
+            antialias:true
+        });
+        myRenderTexture.source.updateMipmaps()
+        if(this.snapshot) this.snapshot.destroy();
+        let sprite = this.snapshot = new PIXI.Sprite(myRenderTexture);
+        sprite.anchor.set(0.5,0.5);
+        sprite.scale.set(worldSz/sz, worldSz/sz);
+        this.container.setFromMatrix(new PIXI.Matrix());
+
+        this.snapshotLayer.addChild(sprite);
+        if(app.stage.scale.x < 4) 
+            this.container.visible = false;
+        
     }
     
 }
@@ -171,7 +225,7 @@ class Act1 extends Act {
             let d = disp.magnitude();
             if(d>300) continue;
             
-            let itm = cell.placeTile(app.stage);
+            let itm = cell.placeTile(model.container);
             itm.visible = false;
             items.push({cell, dist:d});
             //let mat = new PIXI.Matrix().translate(disp.x*2,disp.y*2).append(cell.matrix);
@@ -191,6 +245,9 @@ class Act1 extends Act {
             this.model.showChain([215])
         } else if(e.key == '4') {
             this.model.showChain([855])
+        } else if(e.key == 's') {
+            
+
         }
     }
 
@@ -227,13 +284,22 @@ class Act1 extends Act {
                 }
             } 
         })
-        if(done) this.state = 2;
-
+        if(done) {
+            this.model.takeSnapshot();
+            this.state = 2;
+        }
     }
     tick() {
         if(this.state == 1) this.grow();
 
 
+    }
+    onzoom(scale) {
+        if(scale>4 || !this.snapshot) {
+            this.model.container.visible = true;
+        } else {
+            this.model.container.visible = true;
+        }
     }
 }
 
@@ -428,6 +494,8 @@ function buildScene() {
         let scale = app.stage.scale.x;
         scale = Math.max(minScale, Math.min(maxScale, scale * Math.exp(-e.deltaY*0.002)));
         app.stage.scale.set(scale,scale);
+        if(director.currentAct && director.currentAct.onzoom) 
+            director.currentAct.onzoom(scale);
         console.log(scale);
     })
 

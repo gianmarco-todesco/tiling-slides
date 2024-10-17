@@ -99,7 +99,7 @@ function createProtoTile(index) {
     gc.moveTo(pts[2].x, pts[2].y);
     gc.lineTo(pts[0].x, pts[0].y);
     gc.lineTo(pts[1].x, pts[1].y);
-    gc.stroke({color:'black', width:6, join:"round"})
+    gc.stroke({color:'black', width:6, join:"round", cap:"round"})
     return gc;
 }
 

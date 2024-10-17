@@ -35,6 +35,34 @@ function createButton(name, parent) {
     return btn;    
 }
 
+function createColorButtons() {
+    
+    const m = 10+2;
+    let colors = chroma.scale('Spectral').colors(m-2, null);
+    colors.push(chroma('black'))
+    colors.push(chroma('white'))
+    for(let i=0;i<m;i++) {
+        let color = colors[i]; // chroma.hsl(360 * i / m, 1, 0.6);
+        let colorBtn = document.createElement('button');
+        colorBtn.classList.add('my-btn','color-btn');
+        colorBtn.style.backgroundColor = color;
+        colorBtn.onpointerdown = () => {
+            setCurrentColor(color);
+            colorBtn.classList.add('checked');
+            Array.from(document.querySelectorAll('.color-btn'))
+                .filter(b=>b!==colorBtn)
+                .forEach(b=>b.classList.remove('checked'));
+        }
+        toolbox.appendChild(colorBtn);
+    }
+    span = document.createElement('span');
+    // span.classList.add("spc");
+    span.innerHTML = "&nbsp;BG&nbsp;";
+    toolbox.appendChild(span);
+
+}
+
+
 function createButtonBar(container) {
     let toolbox = document.createElement('div');
     toolbox.classList.add("control-panel");
@@ -105,6 +133,46 @@ function createButtonBar(container) {
 
 }
 
+function createGroupMenu() {
+    let menu = document.createElement("select");
+    menu.setAttribute("id", "group-menu");
+    let groupMenu = menu;
+    document.body.appendChild(menu);
+
+    const groupNameList = [
+        {id:"P1",name:"P1 (o)"}, 
+        {id:"Pm",name:"Pm (**)"}, 
+        {id:"Cm",name:"Cm (*x)"}, 
+        {id:"Pg",name:"Pg (xx)"}, 
+        {id:"P2",name:"P2 (2222)"}, 
+        {id:"Pmm",name:"Pmm (*2222)"}, 
+        {id:"Cmm",name:"Cmm (2*22)"}, 
+        {id:"Pmg",name:"Pmg (22*)"}, 
+        {id:"Pgg",name:"Pgg (22x)"}, 
+        {id:"P3",name:"P3 (333)"}, 
+        {id:"P31m",name:"P31m (3*3)"}, 
+        {id:"P3m1",name:"P3m1 (*333)"}, 
+        {id:"P4",name:"P4 (442)"}, 
+        {id:"P4g",name:"P4g (4*2)"}, 
+        {id:"P4m",name:"P4m (*442)"}, 
+        {id:"P6",name:"P6 (632)"}, 
+        {id:"P6m",name:"P6m (*632)"}, 
+    ];
+    groupNameList.forEach(groupInfo => {
+        let opt = document.createElement('option');
+        opt.innerHTML = groupInfo.name;
+        opt.value = groupInfo.id;
+        menu.appendChild(opt);
+    });
+
+    groupMenu.onchange = ()=>{
+        console.log(groupMenu.value);
+        setCurrentGroup(groupMenu.value);
+        // me.refresh(groupMenu.value);
+    }    
+    // this.refresh("P1");
+
+}
 class GroupControlPanel {
     constructor(container) {
         let panel = document.createElement('div');
@@ -218,14 +286,20 @@ function symmetrySymbolToggled() {
 
 
 function createControls() {
-    let container = document.getElementById('animation-container');
+    let container = document.body; // getElementById('animation-container');
     if(!container)
     {
         console.warn("Missing container");
         return;
     }
-    createButtonBar(container);
-    infoPanel = new GroupControlPanel(container);
+    createGroupMenu();
+
+    document.addEventListener('keydown', e=>{
+        if(e.key == '0') clearAll();
+
+    })
+    // createButtonBar(container);
+    // infoPanel = new GroupControlPanel(container);
 }
 
 
