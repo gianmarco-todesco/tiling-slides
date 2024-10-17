@@ -93,10 +93,10 @@ function resetTiles(wp) {
 function buildSimpleWallpaper() {
     let wp = new PIXI.Container();
     app.stage.addChild(wp);
-    let prototile1 = new PIXI.GraphicsContext().poly(quadPts,true).fill('#eecea4').stroke('black');
+    let prototile1 = new PIXI.GraphicsContext().poly(quadPts,true).fill('#a1562b').stroke('black');
     let mat = getGlideMatrix(1,1);
     let quadPts2 = quadPts.map(p=>mat.apply(p));
-    let prototile2 = new PIXI.GraphicsContext().poly(quadPts2,true).fill('#a1562b').stroke('black');    
+    let prototile2 = new PIXI.GraphicsContext().poly(quadPts2,true).fill('#eecea4').stroke('black');    
 
     for(let i=0; i<(nx*2+1)*(ny*2+1);i++) {
         wp.addChild(new PIXI.Graphics(prototile1));
@@ -138,6 +138,19 @@ function buildHorsesWallpaper() {
         }
     }
     wp.addChild(curMesh);
+    /*
+    const text = new PIXI.Text({
+        text:"Horseman, 1946, M.C.Escher",
+        anchor: new PIXI.Point(0.5,0.5),
+        style:{
+          fontFamily:'short-stack',
+          fontSize:90,
+          fill:'white'
+        }
+      })
+    app.stage.addChild(text);
+    */
+   
     return wp;
 }
 
@@ -156,18 +169,32 @@ function showTranslation(d) {
 }
 
 function showGlideReflection() {
+    let line = new PIXI.Graphics();
+    let dash1 = 10, dash2 = 1.8;
+    for(let y = -500; y <= 500; y += dash1*2*dash2)
+        line.moveTo(0,y-dash1).lineTo(0,y+dash1)
+    line.stroke({color:'magenta', width:6});
+    line.alpha = 0;
+    app.stage.addChild(line);
     wHorses.visible = false;
     w1.visible = w2.visible = true;
     w2.alpha = 0.5;
     w2.setFromMatrix(new PIXI.Matrix());
     resetTiles(w1);
     animations.run(e=>{
+        let t = e.t;
         w2.setFromMatrix(
             getGlideMatrix(
-                smoothStep(e.param,0.15,0.8), 
-                smoothStep(e.param,0.0,0.1)));
-        w2.alpha = 0.5 * (1.0 - smoothStep(e.param,0.8,1.0))
-    }, 5)
+                smoothStep(t,1.7,2.5), 
+                smoothStep(t,0.2,1.5)));
+        w2.alpha = 0.5 * (1.0 - smoothStep(t,3.0,4.0))
+        line.alpha = smoothStep(t,0.0,0.2) - smoothStep(t,2.5,2.7) 
+        if(t > 4) {
+            line.destroy();
+            return false;
+        }
+        else return true;
+    })
 
 }
 
@@ -344,59 +371,16 @@ async function initPixiAndLoadTexture() {
     horsesTexture = await PIXI.Assets.load(HORSES_URL);
     
 
-    // app.stage.addChild(mesh1);
-
-    /*
-    const horses = PIXI.Sprite.from(horsesTexture);
-    horses.anchor.set(0.5);
-    window.horses = horses;
-    app.stage.addChild(horses);
-    */
     blackHorseMeshGeometry = new MeshGeometry(blackPts);
     whiteHorseMeshGeometry = new MeshGeometry(whitePts);
 
     wHorses = buildHorsesWallpaper();
     w1 = buildSimpleWallpaper();
     w2 = buildSimpleWallpaper();
-    
-    // showTranslation();
-    // planeTiler.start();
-    /*
-    let mesh1 = blackHorseMeshGeometry.createMesh();
-    app.stage.addChild(mesh1);
-    let mesh2 = whiteHorseMeshGeometry.createMesh();
-    app.stage.addChild(mesh2);
-    */
 
-    let curMesh;
-
-    /*
-    */
-
-    // 1
-    // end.1
-
-
-    // app.stage.addChild(curMesh);
-    //curMesh.position.x += 50;
-    //curMesh.alpha = 0.5
-    // window.mesh = curMesh
 
     PIXI.Ticker.shared.add((t) => {
         animations.tick();
-        /*
-        if(currentStatus == 0 && currentT > 0.0) {
-            currentT = Math.max(0.0, currentT - 0.0005 * t.elapsedMS);
-        } else if(currentStatus == 1 && currentT < 1.0) {
-            currentT = Math.min(1.0, currentT + 0.0005 * t.elapsedMS);
-        } else return;
-
-        let t0 = smoothStep(currentT,0,1/3);
-        let t1 = smoothStep(currentT,1/3,2/3);
-        let t2 = smoothStep(currentT,2/3,1);
-        curMesh.setFromMatrix(getGlideMatrix(t0,t1));
-        curMesh.alpha = 1-t2;
-        */
     })
 
     document.addEventListener('keydown', e=>{
@@ -425,6 +409,7 @@ function cleanup() {
     PIXI.Assets.unload(HORSES_URL);
     app.destroy();
     app = null;
+    animations.clear();
 }
 
 

@@ -107,6 +107,9 @@ class AnimationManager {
             f, startTime : t, lastTime : t, duration, endcb
         })
     }
+    clear() {
+        this.lst.length = 0;
+    }
     tick(dt) {
         let gt = performance.now() * 0.001;
         for(let i=0; i<this.lst.length;) {

@@ -282,6 +282,7 @@ class Act2 {
     forward() {
         if(this.targetStatus<2)
             this.targetStatus++;
+        else return false;
         return true;
     }
     backward() {
@@ -312,13 +313,49 @@ class Act2 {
     }
 }
 
+class Act3 {
+    init(model) {
+        this.model = model;
+        model.updatePrototiles(0);
+        // this.model.makeSpiral(2);
+        let d1 = this.d1 = model.p1;
+        let d2 = this.d2 = model.p2.subtract(model.p1);
+
+        let oddMatrix = model.getMatrix(model.n/2,0,0);
+        console.log(oddMatrix)
+        for(let i=-24; i<24; i++) {
+            for(let j=-8; j<8; j++) {
+                let d = d1.multiplyScalar(j).add(d2.multiplyScalar(i));
+                let g = new PIXI.Graphics(model.prototile1);
+                let tr = new PIXI.Matrix().translate(d.x,d.y);
+                g.setFromMatrix(tr);
+                app.stage.addChild(g)
+                model.items.push({g});
+                g = new PIXI.Graphics(model.prototile2);
+                g.setFromMatrix(tr.clone().append(oddMatrix));
+                app.stage.addChild(g);
+                model.items.push({g});
+            }
+        }
+        this.t0 = performance.now() * 0.001;
+    }
+    forward() { return false; }
+    backward() { return false; }
+    
+    tick() {
+        let t = performance.now() * 0.001 - this.t0;
+        if(t<1)
+            this.model.updatePrototiles(t);
+        
+    }   
+}
 
 class Director {
     constructor() { 
         const m = 15;   
         this.model = new Model(2*m, 200);
         this.acts = [
-            new Act1(), new Act2()
+            new Act1(), new Act2(), new Act3()
         ]
         this.startAct(0);
         const director = this;

@@ -35,6 +35,13 @@ function getRegularPolygonPoints(n,r) {
     });
 }
 
+function getRotateAroundMatrix(angle, center) {
+    return new PIXI.Matrix()
+        .translate(-center.x, -center.y)
+        .rotate(angle)
+        .translate(center.x, center.y)
+}
+
 function getAdjacentRegularPolygonPoints(srcPolygon, i, m) {
     let n = srcPolygon.length;
     let p0 = srcPolygon[i%n];

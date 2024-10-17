@@ -3,13 +3,14 @@ const slide = {
 }
 
 let imageLayer, mirrorLayer, dotLayer;
+// let texture;
 
 class MovingDot {
     constructor(options) {
         const color = options.color || 'red';
-        const cb = options.callback;
+        const cb = this.callback = options.callback;
         const dot = this.asset = new PIXI.Graphics()
-            .circle(0, 0, 10)
+            .circle(0, 0, 5)
             .fill(color)
             .stroke({color:'black', width:1})
         dot.eventMode = 'dynamic';
@@ -31,6 +32,11 @@ class MovingDot {
             app.stage.on('pointerupoutside', dragEnd)
         }
         dotLayer.addChild(dot);
+    }
+
+    setPos(x,y) {
+        this.asset.position.set(x,y);
+        if(this.callback)this.callback(this.asset.position);
     }
 }
 
@@ -56,14 +62,20 @@ class Mirror {
 
 class MirrorBox {
     constructor() {
-        const myRenderTexture = PIXI.RenderTexture.create({width:256, height:256, autoGenerateMipmaps:true});
+        const myRenderTexture = PIXI.RenderTexture.create({width:512, height:256, autoGenerateMipmaps:true});
 
-        const txt = new PIXI.Text('Fermhamente', {
-            fontFamily: 'Arial',
-            fontSize: 36,
-            fill: 0xffffff, // Colore del testo (bianco)
-            align: 'center',
+        const txt = new PIXI.Text({
+            text:'Fermhamente', 
+            style: {
+                fontFamily: 'Arial',
+                fontSize: 40,
+                fontWeight: 'bold',
+                fill: 0xffffff, // Colore del testo (bianco)
+                align: 'center',
+    
+            }
         });
+        // txt.anchor.set(0.5,0.5)
 
         // do some rendering..
         app.renderer.render({target:myRenderTexture, container:txt});
@@ -71,11 +83,15 @@ class MirrorBox {
         // now refresh mipmaps when you are ready
         myRenderTexture.source.updateMipmaps();
 
+
         
         let gc = this.gc = new PIXI.GraphicsContext()
-        .rect(-20, -50, 40, 100)
-        .fill("orange")
-        .texture(myRenderTexture)
+        //.rect(-100, -50, 200, 100)
+        //.fill("orange")
+        .texture(myRenderTexture, 'white', 0,0)
+
+
+
         this.instances = [];
         this.pool = [];    
         this.seedMatrix = new PIXI.Matrix();
@@ -206,6 +222,9 @@ async function initialize() {
       
     });
 
+    // texture = await PIXI.Assets.load("/images/fermhamente.png");
+
+
     document.body.appendChild(app.canvas);
     app.stage.eventMode = 'dynamic';
             
@@ -222,9 +241,9 @@ async function initialize() {
     let dot = new MovingDot({color:'red', callback:(p) =>{
         mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
     }})
-    dot.asset.position.set(-100,100);
-    let p = dot.asset.position;
-    console.log(p)
+    let p = new PIXI.Point(0,-50);
+    dot.asset.position.set(p.x,p.y)
+
     mirrorBox = new MirrorBox();
     mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
 
@@ -232,12 +251,12 @@ async function initialize() {
 
     let mirror1 = new Mirror(new PIXI.Point(0,100), 0);
     let mirror2 = new Mirror(new PIXI.Point(-100,100), -60);
-    let mirror3 = new Mirror(new PIXI.Point(100,100), 60);
+    let mirror3 = new Mirror(new PIXI.Point(300,100), 60);
     mirrors = [mirror1, mirror2, mirror3]
     // set_3_60(...mirrors)
 
     clearScene();
-
+    setScene1();
     //let g = new PIXI.Graphics().circle(200,0,3).fill('blue');
     //dotLayer.addChild(g);
 
@@ -252,4 +271,5 @@ async function initialize() {
 async function setup() {
     initialize()
 }
+
 
