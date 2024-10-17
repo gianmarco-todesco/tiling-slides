@@ -199,11 +199,11 @@ class Act1 extends Act {
         if(this.g) { this.g.destroy(); this.g = null; }
     }
     setLetters(pts) {
-        if(this.value < 0.2 || this.value > 0.8) {
-            this.letters.forEach(letter=>letter.visible=false)
-            return;
-        }
-        console.log(this.letters.length)
+        //if(this.value < 0.2 || this.value > 0.8) {
+        //    this.letters.forEach(letter=>letter.visible=false)
+        //    return;
+        //}
+        //console.log(this.letters.length)
         for(let i = 0; i<pts.length; i++) {
             let p1 = pts[i];
             let p2 = pts[(i+1)%pts.length];
@@ -224,7 +224,10 @@ class Act1 extends Act {
                 this.letters.push(txt);
                 app.stage.addChild(txt);
             } else txt = this.letters[i];
-            txt.visible = true;
+            if(this.value < 0.2 && letters[i]=='a' || this.value > 0.8 && letters[i]=='b')
+                txt.visible = false;
+            else
+                txt.visible = true;
             txt.x = pm.x;
             txt.y = pm.y;
         }
@@ -308,6 +311,8 @@ class Act2 extends Act {
             'flipped': this.prototiles[2],
         }
         this.container = new PIXI.Container();
+        this.container.position.y = 150;
+        
         app.stage.addChild(this.container);
         this.items = this.shapes.map(s=>{
 
@@ -347,7 +352,7 @@ class Act2 extends Act {
         let dir = p1.subtract(p0);
         let theta = Math.atan2(dir.y,dir.x);
 
-        theta = 0;
+        // theta = 0;
         this.baseMatrix = new PIXI.Matrix().scale(scaleFactor, scaleFactor).rotate(-theta);
         this.baseMatrix.translate(0,400)
         this.updatePrototile()        
@@ -404,8 +409,8 @@ function buildScene() {
 
     //painter = new Painter2(model);
     director = new Director(model)
-    director.addAct(new Act2())
     director.addAct(new Act1())
+    director.addAct(new Act2())
     director.enablePointer();
     //painter.paint(0.5);
 

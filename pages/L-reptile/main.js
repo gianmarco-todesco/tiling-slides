@@ -2,7 +2,7 @@ const slide = {
     name:"L-reptile"    
 }
 
-let app;
+let app, director, animations;
 
 async function initPixi() {
     app = new PIXI.Application();
@@ -37,177 +37,153 @@ function cleanup() {
 
 class LRepTile {
     constructor() {
-        let unit = this.unit = 100;
-        let path2 = [0,0,2,0,2,1,1,1,1,2,0,2].map(v=>v*unit+0.5);
-        let eps = 0.05;
-        let path = [
-            0+eps,0+eps,
-            2-eps,0+eps, 2-eps,1-eps,
-            1-eps,1-eps,
-            1-eps,2-eps, 0+eps,2-eps].map(v=>v*unit+0.5);
-        let shape = new PIXI.Graphics();
-        shape.poly(path2, true);
-        shape.stroke({width:1, color:"black"})
-        shape.poly(path, true);
-        shape.fill(0x657688);    
-        shape.stroke({ width: 4, color: 0xfeeb77 });
-        let texture = app.renderer.generateTexture( shape, {resolution: 1} )
-        this.texture = texture;
+        let unit = this.unit = 128;
+        this.pts = [[0,0],[2,0],[2,1],[1,1],[1,2],[0,2]]
+            .map(([x,y])=>new PIXI.Point((x-0.5)*unit+0.5, (y-0.5)*unit+0.5));
+
         let matrices = this.matrices = [];
-        matrices.push(new PIXI.Matrix().translate(0,0));
-        matrices.push(new PIXI.Matrix().translate(-unit, -unit));
-        matrices.push(new PIXI.Matrix().rotate(Math.PI/2).translate(unit, -unit));
-        matrices.push(new PIXI.Matrix().rotate(-Math.PI/2).translate(-unit, unit));
+        matrices.push(new PIXI.Matrix().translate(-unit/2,-unit/2));
+        matrices.push(new PIXI.Matrix().translate( unit/2, unit/2));
+        matrices.push(new PIXI.Matrix().rotate(Math.PI/2).translate( 5*unit/2,-unit/2));
+        matrices.push(new PIXI.Matrix().rotate(-Math.PI/2).translate(-unit/2, 5*unit/2));
         this.container = new PIXI.Container();
         app.stage.addChild(this.container);
-        this.pool = [];
+        
+        /*
+        let g = new PIXI.Graphics().circle(0,0,2).fill('red');
+        g.moveTo(-200,-200);g.lineTo(200,200);
+        g.moveTo(-200, 200);g.lineTo(200,-200);
+        g.stroke('red');
+        app.stage.addChild(g)
+        */
     }
  
-    place(matrix) {
-        let s;
-        if(this.pool.length>0) {
-            s = this.pool.pop();
-            s.visible = true;
-        } else {
-            s = new PIXI.Sprite({texture:this.texture, anchor:new PIXI.Point(0.5,0.5)});
+    getMatrices(level) {
+        if(level == 0) return [new PIXI.Matrix()];
+        else {
+            let scMatrix = new PIXI.Matrix().scale(0.5,0.5);
+            let outMatrices = [];            
+            let childrenMatrices = this.getMatrices(level-1);
+            for(let parentMatrix of this.matrices) {
+                for(let childMatrix of childrenMatrices) {
+                    outMatrices.push(scMatrix.clone().append(parentMatrix).append(childMatrix));
+                }
+            }
+            return outMatrices;
         }
-        s.setFromMatrix(matrix);
-        this.container.addChild(s);
     }
-    
-    placeRecursively(level, matrix) {
-        if(level == 0) {
-            this.place(matrix);
-        } else {
-            this.matrices.forEach(mat => {
-                let mat2 = matrix.clone()
-                    .append(new PIXI.Matrix().scale(0.5,0.5))
-                    .append(mat);
-                this.placeRecursively(level-1, mat2);
-           });
+
+    createTiling(level, scaleFactor, fill = '#ddeeff', stroke = {color:'black', width:1.5}) {
+        let matrices = this.getMatrices(level);
+        let g = new PIXI.Graphics();
+        const pts = this.pts;
+        for(let matrix of matrices) {
+            let apts = pts.map(p=>matrix.apply(p).multiplyScalar(scaleFactor));
+            /*
+            apts = apts.map(p=>{
+                p.x = Math.floor(p.x+0.5) + 0.5;
+                p.y = Math.floor(p.y+0.5) + 0.5;
+                return p;                
+            })
+            */
+            g.poly(apts,true);
         }
+        if(fill != null) g.fill(fill)
+        if(stroke != null) g.stroke(stroke);
+        this.container.addChild(g);
+        return g;
     }
 
     clear() {
-        let L = this.container.removeChildren();
-        this.pool = this.pool.concat(L);        
-        L.forEach(child => child.visible=false);
+        let L = this.container.removeChildren().forEach(d=>d.destroy());
     }
 
-    periodic(nx,ny,s) {
-        this.clear();
+    createPeriodicTiling(nx,ny,s) {
+        let g = new PIXI.Graphics();
+        let fill = '#ddeeff';
+        let stroke = {color:'black', width:1.5};
         const unit = this.unit;
-        let mat1 = new PIXI.Matrix().translate(0,-unit).rotate(Math.PI);
+        let mat1 = new PIXI.Matrix().translate(-unit,-2*unit).rotate(Math.PI);
+        const pts = this.pts;
         for(let i=-nx; i<=nx; i++) {
             for(let j=-ny;j<=ny;j++) {
-                let dx = unit*2*j, dy = unit*3*i;
-                this.place(new PIXI.Matrix().translate(dx,dy).scale(s,s));
-                this.place(new PIXI.Matrix().translate(dx,dy).append(mat1).scale(s,s));                
+                let dx = unit*2*j, dy = unit*3*i + unit*1*(j%2);
+                let apts = pts.map(p=>p.add(new PIXI.Point(dx,dy)));
+                g.poly(apts, true);
+                let mat2 = new PIXI.Matrix().translate(dx,dy).append(mat1);
+                apts = pts.map(p=>mat2.apply(p));
+                g.poly(apts, true);
+                
             }
         }
-        
-
+        g.fill(fill);
+        g.stroke(stroke);
+        this.container.addChild(g);
+        return g;
     }
 }
 
 
-class Act1 {
-    constructor(){}
+class Act1 extends Act {
+    constructor(){ super() }
 
-    init(model) {
-        this.model = model;
+    start() {
+        let model = this.model;
         let unit = slide.reptile.unit;
-        model.placeRecursively(8, new PIXI.Matrix().translate(unit/2,unit/2).scale(64,64).translate(0.5,0.5));    
+        let g = model.createTiling(7, 32);
+        // model.placeRecursively(8, new PIXI.Matrix().scale(64,64));
+
+        // model.placeRecursively(8, new PIXI.Matrix().translate(unit/2,unit/2).scale(64,64).translate(0.5,0.5));    
     }
-    forward() { return false;}
-    backward() { return false;}
-    tick() {}
 }
 
 
-class Act2 {
-    constructor(){}
+class Act2 extends Act {
+    constructor(){super();}
 
-    init(model) {
-        this.model = model;
-        model.clear();
-        model.placeRecursively(0, new PIXI.Matrix().scale(2,2))
+    start() {
+        let model = this.model;
+        this.scaleFactor = 3;
         this.level = 0;
+        this.build();
+        app.stage.position.set(app.canvas.width/2,app.canvas.height/2)
+    }
+    build() {
+        const model = this.model;
+        let colors = chroma.scale('Spectral').colors(5, null);
+        model.clear();
+        model.createTiling(this.level, this.scaleFactor,'#ddeeff',{color:'black', width:0.5});
+        let w = 2.5;
+        for(let i = this.level-1; i>=0; i--) {
+            w += 1;
+            model.createTiling(i, this.scaleFactor, null, {color:colors[i].hex(), width:w});
+        }
+    }
+    backward() {
+        if(this.level==0) return false;
+        this.level--;
+        this.build();
+        return true;
     }
     forward() { 
+        if(this.level == 5) return false;
         this.level++;
-        this.model.clear();
-        let sc = 2**this.level;
-        this.model.placeRecursively(this.level, new PIXI.Matrix().scale(2,2))
+        this.build();
         return true;
     }
         
-    backward() { return false;}
-    tick() {}
-
 }
 
-class Act3 {
-    constructor() {}
-    init(model) {
-        this.model = model;
+class Act3 extends Act {
+    constructor() { super(); }
+    start() {
+        let model = this.model;
         model.clear();
-        model.periodic(30,10,0.25);
+        model.createPeriodicTiling(30,10,0.25);
         // app.stage.scale.set(0.2,0.2);
     }
-    forward() { return false;}
-    backward() { return false;}
-    tick() {}
 }
 
-
-class Director {
-    constructor(model) {
-        this.model = model; 
-        this.acts = []
-        document.addEventListener('keydown', (e) => {
-            console.log(e);
-            if(e.key == "x") { director.forward(); }
-            else if(e.key == 'z')  { director.backward(); }
-            else if(e.key == 'd') { director.startAct(director.currentActIndex+1); }
-        })
-
-        PIXI.Ticker.shared.add((ticker)=>{
-            if(director.currentAct) director.currentAct.tick(ticker.elapsedMS * 0.001);
-        });
-
-    }
-
-    addAct(act) {
-        this.acts.push(act);
-        if(!this.currentAct) this.startAct(0);
-    }
-
-    startAct(actIndex) {
-        if(0<=actIndex && actIndex<this.acts.length) {
-            this.currentActIndex = actIndex;
-            this.currentAct = this.acts[actIndex];
-            this.currentAct.init(this.model);
-        }
-    }
-    forward() {
-        if(this.currentAct) {
-            if(this.currentAct.forward()) return;
-        }
-        this.startAct(this.currentActIndex+1);
-    }
-
-    backward() {
-        if(this.currentAct) {
-            if(this.currentAct.backward()) return;
-        }
-        this.startAct(this.currentActIndex-1);
-
-    }
-    
-}
-
-let director;
 
 async function buildScene() {
 
@@ -219,27 +195,6 @@ async function buildScene() {
     director.addAct(new Act3());
 
     
-    
-    //matrices.push(new PIXI.Matrix().translate(unit*4,0));
-    //matrices.push(new PIXI.Matrix().translate(0,unit*4).rotate(-Math.PI/2));
-
-    //let mainContainer = new PIXI.Container();
-    //window.mainContainer = mainContainer;
-    //app.stage.addChild(mainContainer);
-
-    
-
-    //place(8, new PIXI.Matrix().scale(64,64).translate(-200.5,-200.5))
-    // place(4, new PIXI.Matrix().scale(2,2).translate(100.5,100.5))
-    /*
-    matrices.forEach(mat => {
-        let s = new PIXI.Sprite(texture);
-        s.setFromMatrix(new PIXI.Matrix().translate(200,100).append(mat));
-        
-        app.stage.addChild(s);
-
-    });
-    */
 
     document.addEventListener('pointerdown', (e)=>{
         let mousePos = new PIXI.Point(e.clientX,e.clientY); 
