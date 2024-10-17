@@ -246,7 +246,7 @@ class Act1 extends Act {
         } else if(e.key == '4') {
             this.model.showChain([855])
         } else if(e.key == 's') {
-            
+            this.model.container.visible = !this.model.container.visible    
 
         }
     }
@@ -286,20 +286,12 @@ class Act1 extends Act {
         })
         if(done) {
             this.model.takeSnapshot();
+            this.model.container.visible = false;
             this.state = 2;
         }
     }
     tick() {
         if(this.state == 1) this.grow();
-
-
-    }
-    onzoom(scale) {
-        if(scale>4 || !this.snapshot) {
-            this.model.container.visible = true;
-        } else {
-            this.model.container.visible = true;
-        }
     }
 }
 

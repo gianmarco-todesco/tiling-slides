@@ -36,7 +36,9 @@ function createButton(name, parent) {
 }
 
 function createColorButtons() {
-    
+    let buttons = document.createElement('p');  
+    document.body.appendChild(buttons);
+    buttons.setAttribute('id', 'color-chooser');
     const m = 10+2;
     let colors = chroma.scale('Spectral').colors(m-2, null);
     colors.push(chroma('black'))
@@ -53,13 +55,8 @@ function createColorButtons() {
                 .filter(b=>b!==colorBtn)
                 .forEach(b=>b.classList.remove('checked'));
         }
-        toolbox.appendChild(colorBtn);
+        buttons.appendChild(colorBtn);
     }
-    span = document.createElement('span');
-    // span.classList.add("spc");
-    span.innerHTML = "&nbsp;BG&nbsp;";
-    toolbox.appendChild(span);
-
 }
 
 
@@ -293,9 +290,12 @@ function createControls() {
         return;
     }
     createGroupMenu();
+    createColorButtons();
 
     document.addEventListener('keydown', e=>{
         if(e.key == '0') clearAll();
+        else if(e.key == 'u') undo();
+        console.log(e);
 
     })
     // createButtonBar(container);

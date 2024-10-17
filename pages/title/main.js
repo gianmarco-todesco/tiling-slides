@@ -10,7 +10,7 @@ function setup() {
     with(paper) {
         const size = 100;
 		var path = new Path.Rectangle([-size/2, -size/2], [size, size]);
-		path.strokeColor = new Color(0.8,0.9,0.9);
+		path.strokeColor = new Color(0.7,0.9,0.9);
         path.strokeWidth = 5;
         path.fillColor = new Color(0.85,0.95,0.98);
         path.applyMatrix = false;

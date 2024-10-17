@@ -39,6 +39,9 @@ class AnimationManager {
     constructor() {
         this.lst = [];
     }
+    clear() {
+        this.lst.length = 0;
+    }
 
     run(f,duration=1,endcb=null) {
         let t = performance.now() * 0.001;
@@ -178,7 +181,7 @@ function showGlideReflection() {
     app.stage.addChild(line);
     wHorses.visible = false;
     w1.visible = w2.visible = true;
-    w2.alpha = 0.5;
+    w2.alpha = 0.75;
     w2.setFromMatrix(new PIXI.Matrix());
     resetTiles(w1);
     animations.run(e=>{
@@ -187,9 +190,9 @@ function showGlideReflection() {
             getGlideMatrix(
                 smoothStep(t,1.7,2.5), 
                 smoothStep(t,0.2,1.5)));
-        w2.alpha = 0.5 * (1.0 - smoothStep(t,3.0,4.0))
+        w2.alpha = 0.75 * (1.0 - smoothStep(t,4.0,5.0))
         line.alpha = smoothStep(t,0.0,0.2) - smoothStep(t,2.5,2.7) 
-        if(t > 4) {
+        if(t > 5) {
             line.destroy();
             return false;
         }
@@ -352,7 +355,7 @@ class PlaneTiler {
 
 let planeTiler = new PlaneTiler();
 
-async function initPixiAndLoadTexture() {
+async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
         backgroundColor: 'gray',
@@ -396,7 +399,7 @@ async function initPixiAndLoadTexture() {
 
 
 function setup() {
-    initPixiAndLoadTexture().then(()=>console.log("qui"));
+    initPixi().then(()=>console.log("qui"));
     document.addEventListener('keydown', (e) => {
         if(e.key == '1') currentStatus = 1;
         else if(e.key == '0') currentStatus = 0;

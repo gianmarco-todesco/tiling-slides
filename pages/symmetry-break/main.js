@@ -59,7 +59,7 @@ function buildScene() {
     const r = unit;
 
 
-    let mrg = -20;
+    let mrg = -50;
     let x1 = app.canvas.width/2-mrg;
     let y1 = app.canvas.height/2-mrg;
     winBounds = {x0:-x1,y0:-y1,x1,y1};

@@ -4,7 +4,11 @@ const slide = {
 
 let app;
 
-async function initPixiAndLoadTexture() {
+const c0 = chroma('white').hex(), c1 = chroma('black').hex();
+const cA = chroma('yellow').hex(), cB = chroma('cyan').hex();
+
+
+async function initPixi() {
     app = new PIXI.Application();
     await app.init({ 
         resizeTo: window,
@@ -23,7 +27,7 @@ async function initPixiAndLoadTexture() {
 }
 
 function setup() {
-    initPixiAndLoadTexture();
+    initPixi();
     document.addEventListener('keydown', (e) => {
         console.log(e);
     })
@@ -72,6 +76,11 @@ class WangSet {
         this.states = states;
         this.tiles = [];
         let cx = this.cx = chroma('lightgray').hex();
+        this.container = new PIXI.Container();
+        app.stage.addChild(this.container);
+        this.tilesetContainer = new PIXI.Container();
+        app.stage.addChild(this.tilesetContainer);
+        this.firstLine = [];
         for(let c of alphabet) {
             let w = new Wang(c,cx,c,cx);
             this.tiles.push(w);
@@ -92,19 +101,27 @@ class WangSet {
             if(dir=="L") this.tiles.push(new Wang(sc,cx,output,nextState));
             else this.tiles.push(new Wang(sc,nextState,output,cx));
         }
+        this.x0 = -200;
+        this.y0 = 100;
     }
 
-    placeTile(tile, x, y) {
+    clear() {
+        this.container.removeChildren().forEach(d=>d.destroy());
+        this.firstLine = [];
+    }
+
+    placeTile(tile, x, y, container) {
         let g = tile.createGraphics();
         g.position.set(x,y); 
-        return app.stage.addChild(g);
+        container.addChild(g);
+        return g;
     }
 
     placeTiles(x0,y0,maxcol=5) {
         let i = 0;
         let x=x0, y=y0;
         for(let tile of this.tiles) {
-            this.placeTile(tile, x,y); x+=50;
+            this.placeTile(tile, x,y, this.tilesetContainer); x+=50;
             if(i++>maxcol) {
                 i=0;
                 x=x0;
@@ -124,15 +141,23 @@ class WangSet {
         return q[0];        
     }
 
+    addToFirstLine(color) {
+        if(this.firstLine.length == 0) {
+            let tile = this.findTile(color,cB);
+            let g = this.placeTile(prevTile, this.x0, this.y0, this.container);
+        }
+
+    }
+
     firstLine(x,y,colors,s0) {
         const d = 40;
         let L = [];
         let prevTile = this.findTile(colors.at(-1),s0);
-        let g = this.placeTile(prevTile, x+d*(colors.length-1),y);
+        let g = this.placeTile(prevTile, x+d*(colors.length-1),y, this.container);
         L.push({g,tile:prevTile});        
         for(let i = colors.length-2; i>=0; i--) {
             let tile = this.findTile(colors[i], prevTile.colors[3]);
-            g = this.placeTile(tile, x+d*i, y);
+            g = this.placeTile(tile, x+d*i, y, this.container);
             L.push({g, tile});
             prevTile = tile;
         }
@@ -145,14 +170,14 @@ class WangSet {
         // this.lastLine = [];
         let upTile = this.lastLine.at(-1);
         let tile = this.findTile(upTile.tile.colors[2],this.cx);
-        let g = this.placeTile(tile, upTile.g.position.x, upTile.g.position.y+d);
+        let g = this.placeTile(tile, upTile.g.position.x, upTile.g.position.y+d, this.container);
         L.push({g, tile});
         let prevTile = tile;
         for(let i = this.lastLine.length-2; i>=0; i--) {
             upTile = this.lastLine[i];
             console.log(i,upTile)
             tile = this.findTile(upTile.tile.colors[2], prevTile.colors[3]);
-            g = this.placeTile(tile, upTile.g.position.x, upTile.g.position.y+d);
+            g = this.placeTile(tile, upTile.g.position.x, upTile.g.position.y+d, this.container);
             L.push({g, tile});
             prevTile = tile;
         }
@@ -166,8 +191,6 @@ let wangSet;
 function buildScene() {
 
 
-    let c0 = chroma('white').hex(), c1 = chroma('black').hex();
-    let cA = chroma('yellow').hex(), cB = chroma('cyan').hex();
 
     wangSet = new WangSet([c0,c1],[cA,cB],[
         {input:c0,state:cA,output:c0, nextState:cA, dir:"L"},
@@ -181,5 +204,11 @@ function buildScene() {
     wangSet.firstLine(-200,y,[c0,c0,c0,c1,c1,c1,c1],cB); y+=40;
     for(let i=0;i<8;i++) wangSet.nextLine(-200,y);
 
+
+    document.addEventListener('keydown', e=>{
+        if(e.key == 'c') {
+
+        }  
+    })
 }
 

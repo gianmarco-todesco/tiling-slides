@@ -7,7 +7,7 @@ let app;
 async function initPixiAndLoadTexture() {
     app = new PIXI.Application();
     await app.init({ 
-        backgroundColor: 'gray',
+        backgroundColor: 'white',
         resizeTo: window,
         antialias: true,
         autoDensity: true,
@@ -49,6 +49,9 @@ function setup() {
         }
         console.log(e);
     })
+
+    
+
 }
 
 
@@ -168,8 +171,8 @@ function createHat() {
     g.lineTo(-ux*0.5,-uy);
     g.lineTo(-ux*0.75,-uy*0.5);
     g.closePath();
-    g.fill('green')
-    g.stroke({color:'black', width:2})
+    g.fill('cyan')
+    g.stroke({color:'#22aadd', width:3})
     app.stage.addChild(g)
     
     return g;
@@ -181,6 +184,7 @@ function buildScene() {
     quad2 = createQuad('cyan');
 
     grid1 = createHexGrid();
+    grid1.visible = false;
     grid2 = createQuadGrid();
     grid2.visible = false;
 
@@ -188,6 +192,6 @@ function buildScene() {
     quadGroup.visible = false;
 
     hat = createHat();
-    hat.visible = false;
+    hat.visible = true;
 
 }

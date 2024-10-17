@@ -3,14 +3,16 @@ const slide = {
 }
 
 let imageLayer, mirrorLayer, dotLayer;
-// let texture;
+let app, director, animations;
+let mirrorBox;
+let theDot;
 
 class MovingDot {
     constructor(options) {
-        const color = options.color || 'red';
+        const color = options.color || 'gray';
         const cb = this.callback = options.callback;
         const dot = this.asset = new PIXI.Graphics()
-            .circle(0, 0, 5)
+            .circle(0, 0, 4)
             .fill(color)
             .stroke({color:'black', width:1})
         dot.eventMode = 'dynamic';
@@ -96,6 +98,12 @@ class MirrorBox {
         this.pool = [];    
         this.seedMatrix = new PIXI.Matrix();
         this.matrices = [];
+
+        let mirror1 = new Mirror(new PIXI.Point(0,100), 0);
+        let mirror2 = new Mirror(new PIXI.Point(-100,100), -60);
+        let mirror3 = new Mirror(new PIXI.Point(300,100), 60);
+        this.mirrors = [mirror1, mirror2, mirror3]
+    
     }
 
     setInstances(matrices) {
@@ -145,74 +153,184 @@ class MirrorBox {
         this.matrices = matrices;
         this._update();
     }
-}
-
-let mirrorBox;
-let mirrors = [];
-
-function set_2_60(mirror1, mirror2) {
-    let m1 =  mirror1.matrix, m2 = mirror2.matrix;
-    let rot = m2.clone().append(m1);
-    let matrices = [new PIXI.Matrix(), m1];
-    for(let i=2; i<6; i++) {
-        matrices.push(rot.clone().append(matrices[i-2]));
-    }
-    mirrorBox.setMirrorMatrices(matrices);
-}
 
 
-function set_3_60(mirror1, mirror2, mirror3) {
-    let startTime = performance.now();
-    let m1 =  mirror1.matrix, m2 = mirror2.matrix, m3 = mirror3.matrix;
-    let rot = m2.clone().append(m1);
-    let baseMatrices = [new PIXI.Matrix(), m1];
-    for(let i=2; i<6; i++) {
-        baseMatrices.push(rot.clone().append(baseMatrices[i-2]));
-    }
-    let matrices = [];
-    let t1 = m1.clone().append(m3).append(m1).append(m2);
-    let t2 = m2.clone().append(m3).append(m2).append(m1);
-    for(let x= -5; x<=5; x++) {
-        for(let y = -5; y<=5; y++) {
-            let tx = t1.tx * x + t2.tx * y;
-            let ty = t1.ty * x + t2.ty * y;            
-            baseMatrices.forEach(baseMatrix => {
-                matrices.push(baseMatrix.clone().translate(tx,ty));
-            })
+    set_2_60(mirror1, mirror2) {
+        let m1 =  mirror1.matrix, m2 = mirror2.matrix;
+        let rot = m2.clone().append(m1);
+        let matrices = [new PIXI.Matrix(), m1];
+        for(let i=2; i<6; i++) {
+            matrices.push(rot.clone().append(matrices[i-2]));
         }
-    }    
-    mirrorBox.setMirrorMatrices(matrices);
-    console.log("done in "+(performance.now()-startTime));
+        this.setMirrorMatrices(matrices);
+    }
+    
+    
+    set_3_60(mirror1, mirror2, mirror3) {
+        let startTime = performance.now();
+        let m1 =  mirror1.matrix, m2 = mirror2.matrix, m3 = mirror3.matrix;
+        let rot = m2.clone().append(m1);
+        let baseMatrices = [new PIXI.Matrix(), m1];
+        for(let i=2; i<6; i++) {
+            baseMatrices.push(rot.clone().append(baseMatrices[i-2]));
+        }
+        let matrices = [];
+        let t1 = m1.clone().append(m3).append(m1).append(m2);
+        let t2 = m2.clone().append(m3).append(m2).append(m1);
+        for(let x= -5; x<=5; x++) {
+            for(let y = -5; y<=5; y++) {
+                let tx = t1.tx * x + t2.tx * y;
+                let ty = t1.ty * x + t2.ty * y;            
+                baseMatrices.forEach(baseMatrix => {
+                    matrices.push(baseMatrix.clone().translate(tx,ty));
+                })
+            }
+        }    
+        this.setMirrorMatrices(matrices);
+        console.log("done in "+(performance.now()-startTime));
+    }
+
+    clearScene() {
+        this.mirrors.forEach(mirror => mirror.line.visible = false);
+        this.setMirrorMatrices([]);
+    }
+
+    setScene1() {
+        this.clearScene();        
+        this.mirrors[0].line.visible = true;
+        this.setMirrorMatrices([new PIXI.Matrix(), this.mirrors[0].matrix]);
+    }
+
+    setScene2() {
+        let mirrors = this.mirrors;
+        this.clearScene();
+        mirrors[0].line.visible = true;
+        mirrors[1].line.visible = true;
+        this.set_2_60(...mirrors)
+    }
+
+    setScene3() {
+        let mirrors = this.mirrors;
+        this.clearScene();
+        mirrors[0].line.visible = true;
+        mirrors[1].line.visible = true;
+        mirrors[2].line.visible = true;
+        this.set_3_60(...mirrors)
+    }
+
 }
 
 
-function clearScene() {
-    mirrors.forEach(mirror => mirror.line.visible = false);
-    mirrorBox.setMirrorMatrices([]);
+class Act1 extends Act {
+    constructor() { super(); }
+    start() {
+        let mirrorBox = this.model;
+        mirrorBox.setScene1();
+    }
 }
-function setScene1() {
-    clearScene();
-    mirrors[0].line.visible = true;
-    mirrorBox.setMirrorMatrices([new PIXI.Matrix(), mirrors[0].matrix]);
+
+function smooth(x) { return (1.0-Math.cos(x*Math.PI))/2; }
+
+class Act2 extends Act {
+    constructor() { super(); }
+    start() {
+        let mirrorBox = this.model;
+        mirrorBox.setScene2();
+        this.mirror = null;
+    }
+
+    end() {
+        if(this.mirror) {this.mirror.destroy(); this.mirror=null;}
+    }
+
+    toggleMirror() {
+        if(this.mirror) {this.mirror.destroy(); this.mirror=null;}
+        else {
+            let g = new PIXI.Graphics();
+            let phi = Math.PI/3;
+            let r = 1000;
+            const x = r * Math.cos(phi), y = r * Math.sin(phi);
+            const x0 = -100, y0 = 100;
+            g.moveTo(x0-x,y0-y);g.lineTo(x0+x,y0+y);
+            g.stroke({color:'magenta', width:6})
+            app.stage.addChildAt(g,0);
+            this.mirror = g;
+        }
+    }
+    onkeydown(e) {
+        if(e.key == 'm') {
+            this.toggleMirror();            
+        } else if(e.key == 'r') {
+            this.showRotation();
+        }
+    }
+
+    showRotation() {
+        const mirrorBox = this.model;
+        let matrices = mirrorBox.instances.map(i=>i.localTransform);
+        let rotArrows = new PIXI.Graphics();
+        app.stage.addChild(rotArrows)
+        let cx = -100, cy = 100;
+
+        
+        animations.run(e=>{
+
+            if(e.param < 1.0) {
+                let phi = -smooth(e.param)*2*Math.PI/3;
+                let rot = new PIXI.Matrix().translate(-cx,-cy)
+                    .rotate(phi)
+                    .translate(cx,cy);
+                let rMatrices = matrices.map(m=>rot.clone().append(m));    
+                mirrorBox.setInstances(matrices.concat(rMatrices));
+
+                this.drawArrows(rotArrows, rot);
+
+            } else {
+                rotArrows.destroy();
+                mirrorBox.setInstances(matrices);  
+            }
+
+        }, 2)
+    }
+
+
+    drawArrows(g, rot) {
+        let center = new PIXI.Point(-100,100);
+        let dotPos = theDot.asset.position;
+        g.clear();
+        g.moveTo(center.x, center.y);
+        g.lineTo(dotPos.x, dotPos.y);
+        let p = rot.apply(dotPos);
+        g.moveTo(center.x, center.y);
+        g.lineTo(p.x, p.y);
+        let r = 40;
+        let d1 = dotPos.subtract(center);
+        let d2 = p.subtract(center);
+        
+        let q = center.add(d1.normalize().multiplyScalar(r));
+        g.moveTo(q.x,q.y);
+        g.arc(center.x, center.y, r, Math.atan2(d1.y,d1.x), Math.atan2(d2.y,d2.x),true)
+        g.lineTo(center.x, center.y);
+        g.fill('cyan');
+        g.stroke({color:'blue', width:1})
+    }
 }
-function setScene2() {
-    clearScene();
-    mirrors[0].line.visible = true;
-    mirrors[1].line.visible = true;
-    set_2_60(...mirrors)
+
+
+class Act3 extends Act {
+    constructor() { super(); }
+    start() {
+        let mirrorBox = this.model;
+        mirrorBox.setScene3();
+    }
 }
-function setScene3() {
-    clearScene();
-    mirrors[0].line.visible = true;
-    mirrors[1].line.visible = true;
-    mirrors[2].line.visible = true;
-    set_3_60(...mirrors)
-}
+
+
 
 async function initialize() {
     app = new PIXI.Application();
     await app.init({ 
-        backgroundColor: 'gray',
+        backgroundColor: 'lightgray',
         resizeTo: window,
         antialias: true,
         autoDensity: true,
@@ -238,33 +356,27 @@ async function initialize() {
     app.stage.addChild(mirrorLayer);
     app.stage.addChild(dotLayer);
 
-    let dot = new MovingDot({color:'red', callback:(p) =>{
-        mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
-    }})
     let p = new PIXI.Point(0,-50);
-    dot.asset.position.set(p.x,p.y)
-
     mirrorBox = new MirrorBox();
     mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
 
-    
+    let dot = theDot = new MovingDot({color:'grey', callback:(p) =>{
+        mirrorBox.setSeedMatrix(new PIXI.Matrix().translate(p.x,p.y))
+    }})
+    dot.asset.position.set(p.x,p.y)
 
-    let mirror1 = new Mirror(new PIXI.Point(0,100), 0);
-    let mirror2 = new Mirror(new PIXI.Point(-100,100), -60);
-    let mirror3 = new Mirror(new PIXI.Point(300,100), 60);
-    mirrors = [mirror1, mirror2, mirror3]
     // set_3_60(...mirrors)
 
-    clearScene();
-    setScene1();
-    //let g = new PIXI.Graphics().circle(200,0,3).fill('blue');
-    //dotLayer.addChild(g);
+    mirrorBox.setScene1();
 
-    addEventListener("keydown", (event) => {
-        console.log(event);
-        if(event.key=='1') setScene1();
-        else if(event.key=='2') setScene2();
-        else if(event.key=='3') setScene3();
+    director = new Director(mirrorBox);
+    director.addAct(new Act1());
+    director.addAct(new Act2());
+    director.addAct(new Act3());
+    
+    animations = new AnimationManager();
+    PIXI.Ticker.shared.add((ticker)=>{
+        animations.tick(ticker.elapsedMS * 0.001);
     });
 }
 
@@ -272,4 +384,7 @@ async function setup() {
     initialize()
 }
 
+function cleanup() {
+    
+}
 

@@ -10,7 +10,7 @@ async function initPixi() {
         backgroundColor: 'lightgrey',
         resizeTo: window,
         antialias: true,
-        autoDensity: true,
+        // autoDensity: true,
         // autoStart: false,
         // backgroundColor: 0x333333,
         resolution: window.devicePixelRatio
@@ -154,10 +154,18 @@ class Act3 extends Act {
 
         this.offsets = {
             'H': new PIXI.Point(-600,-50),
-            'P': new PIXI.Point(-600,-50 + 200),
+            'P': new PIXI.Point(-600,-50 + 200 -100),
             'T': new PIXI.Point(-600 + 300,-50),
             'F': new PIXI.Point(-600+300,-50 - 50),            
         };
+        /*
+        this.offsets = {
+            'H': new PIXI.Point(-600,50),
+            'P': new PIXI.Point(-300,-50 + 200),
+            'T': new PIXI.Point(-300 + 300,-50),
+            'F': new PIXI.Point(-300+300,-50 - 50),            
+        };
+        */
 
         for(let key of  ["H","T","P","F"]) {
             let metatile = metatiles[key];            
@@ -290,27 +298,37 @@ class Act5 extends Act {
     constructor() { super() }
     start() {
         let model = this.model;
+        this.magenta = true;
         this.setLevel(0);
     }
 
     setLevel(level) {
+        this.level = level;
+        let scaleMatrix = new PIXI.Matrix().scale(0.5,0.5);
         let model = this.model;
         let metatiles = createChildren(model.patches[level]);
         model.clear();
-        model.addMetaTile(metatiles.H, new PIXI.Matrix());
-        let g = new PIXI.Graphics();        
-        metatiles.H.metatilesBounds.forEach(extbound=>{
-            let bounds = extbound.bounds;
-            g.poly(bounds,true).stroke({color:'blue', width:3});
-        })
-        model.container.addChild(g);
-        model.addMetaTileBounds(metatiles.H, new PIXI.Matrix());        
+        model.addMetaTile(metatiles.H, scaleMatrix);
+        if(this.magenta) {
+            let g = new PIXI.Graphics();    
+            
+            metatiles.H.metatilesBounds.forEach(extbound=>{
+                let bounds = extbound.bounds.map(p=>scaleMatrix.apply(p));
+                g.poly(bounds,true).stroke({color:'magenta', width:5});
+            })
+            model.container.addChild(g);
+        }
+        model.addMetaTileBounds(metatiles.H, scaleMatrix);        
     }
     onkeydown(e) {
         if(e.key == '1') this.setLevel(1);
         else if (e.key == '2') this.setLevel(2);
         else if (e.key == '3') this.setLevel(3);
         else if (e.key == '0') this.setLevel(0);
+        else if (e.key == 'm') {
+            this.magenta = !this.magenta;
+            this.setLevel(this.level);
+        }
     }
 
 }
@@ -326,7 +344,7 @@ function buildScene() {
     //g.circle(0,0,5).fill('red');
     //app.stage.addChild(g);
 
-    app.stage.scale.set(0.5,0.5)
+    // app.stage.scale.set(0.5,0.5)
     
     let startTime = performance.now();
     model = new Model(3);
@@ -334,6 +352,7 @@ function buildScene() {
     console.log("model created in "+dt+"ms");
 
     director = new Director(model);
+    director.addAct(new Act3());
     director.addAct(new Act1());
     // director.addAct(new Act2());
     director.addAct(new Act3());

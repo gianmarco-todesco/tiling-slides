@@ -155,8 +155,10 @@ class RegularPolygonAct extends Act {
         if(this.step == 1) {
             let g = this.createPolygon();
             const {angle, center} = this;
+            g.alpha = 0.5;
             animations.run(e=>{
                 g.setFromMatrix(getRotateAroundMatrix(angle*e.param, center))
+                if(e.param >= 1.0) g.alpha = 1.0;
             },0.5)            
         } else {
             model.clearStage();
@@ -176,22 +178,27 @@ class RegularPolygonAct extends Act {
             for(let i=2; i<n; i++) {
                 gs.push(this.createPolygon())
             }
+            gs.forEach(g=>{ g.alpha = 0.5; g.visible=false; });
             animations.run(e=>{
                 let phi = angle+e.t*2;
                 for(let i=0; i<n-2; i++) {
                     let g = gs[i];
                     let maxAngle = angle * (i+2);
                     let psi = Math.min(maxAngle,phi);
+                    if(phi >= maxAngle) g.alpha = 1.0;
+                    else if(phi >= maxAngle - angle) g.visible = true;
                     g.setFromMatrix(getRotateAroundMatrix(psi, center))
                 }
                 return phi<angle*(n-1);                
             },0.5)            
         } else {
             model.clearStage();
+            let g;
             for(let i=0; i<n; i++) {
-                let g = model.createInstance('rp'+this.m);
+                g = model.createInstance('rp'+this.m);
                 g.setFromMatrix(getRotateAroundMatrix(angle*i, center))
-            }        
+            } 
+            if(this.m == 7 || this.m == 5) g.alpha = 0.5
         }
         this.step = 3;
     }
@@ -234,10 +241,11 @@ function buildScene() {
     model.createShapes();
     animations = new AnimationManager();
     director = new Director(model);
-    director.addAct(new RegularPolygonAct(7));
     director.addAct(new RegularPolygonAct(3));
     director.addAct(new RegularPolygonAct(4));
     director.addAct(new RegularPolygonAct(6));
+    director.addAct(new RegularPolygonAct(7));
+    director.addAct(new RegularPolygonAct(5));
     PIXI.Ticker.shared.add((ticker)=>{
         animations.tick(ticker.elapsedMS);
     });
