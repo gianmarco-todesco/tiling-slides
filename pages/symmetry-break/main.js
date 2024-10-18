@@ -144,26 +144,10 @@ function buildScene() {
             param = Math.max(paramTarget, param - dt);
         }
         wheel.rotation = Math.PI/6 * smoothStep(param, 0, 1);
-        // foo(new PIXI.Point(-220,0),t)
-        // console.log(grid)
-       // dotSet.set(grid)
     });
 
 }
 
-/*
-let dotSet = new DotSet();
-
-function foo(p0, phi) {
-    const r = 50;
-    let grid = createGrid(p0, 
-        new PIXI.Point(Math.cos(phi)*r,Math.sin(phi)*r),
-        new PIXI.Point(Math.cos(phi+Math.PI/3)*r,Math.sin(phi+Math.PI/3)*r),
-        winBounds);
-    // console.log(grid);
-    dotSet.set(grid)
-}
-*/
 
 
 function setup() {

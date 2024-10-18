@@ -2,6 +2,10 @@ const slide = {
     name:"regular-tiling"    
 }
 
+//
+// non usata nella conferenza
+//
+
 function erode(pts,amount) {
     const n = pts.length;
     return pts.map((p,i) => {
@@ -215,18 +219,6 @@ function setup() {
 
         view.setCenter(new Point(0,0));
 
-        
-        /*
-        let protocell = new Symbol(path);
-        window.protocell = protocell;
-        for(let x=-10;x<=10;x++) {
-            for(let y=-10;y<=10;y++) {
-                let matrix = new Matrix().translate(d1.multiply(x).add(d2.multiply(y)))
-                let cell = protocell.place();
-                cell.applyMatrix = false;
-                cell.matrix = matrix;
-        }}
-                */
         makeTiling2();
 
         let tool = new Tool();

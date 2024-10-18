@@ -2,6 +2,10 @@ const slide = {
     name:"heesh"    
 }
 
+//
+// non usato nella conferenza
+//
+
 // (0,0),(1,0) => p0,p1
 function getTwoPointsTransform(p0, p1) {
     let e0 = p1.subtract(p0);

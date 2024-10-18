@@ -30,17 +30,6 @@ async function initPixi() {
 
 function setup() {
     initPixi();
-    /*
-    document.addEventListener('keydown', (e) => {
-        console.log(e);
-        if(e.key == '0') foo(0);
-        else if(e.key == '1') foo(1);
-        else if(e.key == '2') foo(2);
-        else if(e.key == '3') foo(3);
-        else if(e.key == '4') foo(4);
-        
-    })
-        */
 }
 
 
@@ -158,22 +147,6 @@ class Model {
             return true;
         });
     }
-
-    /*
-    createWholeTiling() {
-        let g = new PIXI.Graphics();
-        this.patch.cells.forEach(cell=>{
-
-            let pts = ptsTable[cell.key].map(p=>cell.matrix.apply(p));
-            let center = pts.reduce((a,b)=>a.add(b)).multiplyScalar(1/pts.length);
-            if(center.magnitude()<100) {
-                g.poly(pts,true).fill(cell.key.startsWith('T')?'orange':'cyan');
-                g.poly([pts[1],pts[0],pts[2]],false).stroke({color:'black', width:0});
-            }
-        });
-        return g;
-    }
-    */
 
     takeSnapshot() {
         let sz = 4096;
@@ -332,14 +305,7 @@ class Act2 extends Act {
                 c2.addChild(g);
             }
         }
-        
-        /*
-        app.stage.on('globalpointermove', (e) => {
-            c2.position.set(e.global.x, e.global.y)
-        })
-            */
-
-        
+                
         document.addEventListener('pointerdown', e=>{
             let x,y;
             function drag(e) {
@@ -367,7 +333,6 @@ class Act2 extends Act {
     }
 
     tick() {
-        // this.c1.position.x = 200*Math.sin(performance.now()*0.0001)
     }
 }
 
@@ -412,12 +377,6 @@ class Act3 extends Act {
         c1.addChild(g1);
         c2.addChild(g2);
                 
-        /*
-        app.stage.on('globalpointermove', (e) => {
-            c2.position.set(e.global.x, e.global.y)
-        })
-            */
-
         
         document.addEventListener('pointerdown', e=>{
             let x,y;
@@ -427,8 +386,6 @@ class Act3 extends Act {
                 let amount = 1.0/app.stage.scale.x;
                 let newx = c2.position.x + dx * amount;
                 let newy = c2.position.y + dy * amount;                
-                // setTimeout(()=>{c2.position.set(newx,newy)},0)
-                // c2.position.set(newx,newy);  
                 c2.position.x = newx;
             }
             function dragEnd(e) {
@@ -446,7 +403,6 @@ class Act3 extends Act {
     }
 
     tick() {
-        // this.c1.position.x = 200*Math.sin(performance.now()*0.0001)
     }
 }
 
@@ -464,21 +420,6 @@ function buildScene() {
         animations.tick();
     });
     
-    /*
-    let y = ptsTable['tL'][1].y * 0.8;
-    let s = 5;
-    let globalMatrix = new PIXI.Matrix().translate(0,-y).scale(s,s);
-    const width = app.canvas.width * 3, height = app.canvas.height * 3;
-    let startTime = performance.now();
-    let patch = buildPatch('tL',12,globalMatrix, width*0.4, height*0.4);
-    console.log("patch:", performance.now() - startTime);
-    window.patch = patch;
-    startTime = performance.now();    
-    patch.placeTiles(app.stage, 2000);
-    console.log("tiles:", performance.now() - startTime);
-
-    
-    */
 
     // implement zoom
     document.addEventListener('wheel', (e)=>{
@@ -498,55 +439,5 @@ function buildScene() {
 }
 
 
-
-function showChain(chain) {
-    
-    /*
-    let pts = [];
-    for(let node of chain) {
-        let pa = node.cell.edges[0].pa;
-        let pb = node.cell.edges[0].pb;
-        let p = lerp(pa,pb,0.5);
-        pts.push(p);        
-    }
-    let g = new PIXI.Graphics();
-    g.poly(pts, true).stroke({color:'red', width:2});
-    app.stage.addChild(g);
-    return g; 
-    */
-}
-
-function foo() {
-    if(stack.length > 0) {
-        let cell = stack.pop();
-        for(let edge of cell.edges) {
-            if(edge.tween && (edge.tween.cell.key.startsWith('T'))) {
-                let other = edge.tween.cell;
-                if(!touched[other.index]) {
-                    touched[other.index] = true;
-                    other.itm.filters = [filter];
-                    stack.push(other);
-                }    
-            }
-        }
-    } else {
-        while(cur < patch.cells.length) 
-        {
-            let cell = patch.cells[cur];
-            if(!touched[cell.index] && cell.key.startsWith('T'))
-                break;
-            cur++;
-        }
-        if(cur < patch.cells.length) 
-        {
-            let cell = patch.cells[cur];
-            cur++;
-            touched[cell.index] = true;
-            stack.push(cell);
-            cell.itm.filters = [filter];
-        }
-        
-    }
-}
 
 

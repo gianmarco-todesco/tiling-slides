@@ -121,9 +121,6 @@ class Model {
         let patch = this.patches[0];
         let children = createAbstractChildren(patch);
         this.boh1(children.H);
-        //this.boh1(children.F);
-        //this.boh1(children.P);
-        //this.boh1(children.T);
     }
 
 }
@@ -241,12 +238,6 @@ class Act4 extends Act {
         let patch = model.patches[level];
         let metatiles = this.metatiles = createChildren(patch, true);
 
-        /* let offsets = {
-            'H': new PIXI.Point(-550,-10),
-            'P': new PIXI.Point(-600,100),
-            'T': new PIXI.Point(-150+200,-200),
-            'F': new PIXI.Point(-500+500,-90+200),            
-        } */
         let offsets = {
             'H': new PIXI.Point(-400,-200),
             'P': new PIXI.Point(-400,300),
@@ -336,16 +327,7 @@ class Act5 extends Act {
 
 
 
-function buildScene() {
-
-
-
-    //let g = new PIXI.Graphics();
-    //g.circle(0,0,5).fill('red');
-    //app.stage.addChild(g);
-
-    // app.stage.scale.set(0.5,0.5)
-    
+function buildScene() {    
     let startTime = performance.now();
     model = new Model(3);
     let dt = (performance.now()-startTime).toFixed(0);
@@ -353,109 +335,13 @@ function buildScene() {
 
     director = new Director(model);
     director.addAct(new Act1());
-    // director.addAct(new Act2());
     director.addAct(new Act3());
     director.addAct(new Act4());
     director.addAct(new Act5());
-
-
-    // p1 = patch.createObject(app);
 
     function drawPolygon(shape, polygon) {
         shape.moveTo(...coords(polygon[polygon.length-1]));
         polygon.forEach(p=>shape.lineTo(...coords(p)));
     }
-
-    /*
-    let shape = new PIXI.Graphics();
-    drawPolygon(shape, patch.outlines.H);
-    shape.stroke({width:6, color:0x000000});
-    app.stage.addChild(shape);
-    */
-
-
-    //drawPolygon(shape, patch.outlines.P);
-    //drawPolygon(shape, patch.outlines.F);
-    //drawPolygon(shape, patch.outlines.T);
-
-    /*
-    p1.addChild(shape);
-
-    p1.scale.set(1/3,1/3);
-    p1.position.set(300,300);
-
-    let metatiles = createChildren(patch);
-    let Q = [];
-    ch_H = metatiles.H.createObject(app);
-    ch_H.scale.set(1/3,1/3);
-    ch_H.position.set(100,110);
-    Q.push(ch_H);
-    ch_P = metatiles.P.createObject(app);
-    ch_P.scale.set(1/3,1/3);
-    ch_P.position.set(120,250);
-    Q.push(ch_P);
-    ch_F = metatiles.F.createObject(app);
-    ch_F.scale.set(1/3,1/3);
-    ch_F.position.set(100,350);
-    Q.push(ch_F);
-    ch_T = metatiles.T.createObject(app);
-    ch_T.scale.set(1/3,1/3);
-    ch_T.position.set(80,460);
-    Q.push(ch_T);
-    
-
-    let cross = new PIXI.GraphicsContext();
-    cross.moveTo(-50,0).lineTo(50,0).moveTo(0,-50).lineTo(0,50)
-        .stroke({width:2.5, color:0x000000});
-    Q.forEach(m=>{
-        let c1 = new PIXI.Graphics(cross);
-        app.stage.addChild(c1);
-        c1.position.set(m.position.x,m.position.y);    
-    });
-
-
-    let patch2 = createPatch(metatiles);
-    let p2 = patch2.createObject(app);
-
-    p2.scale.set(0.2,0.2);
-    p2.position.set(600,0);
-
-    let elapsed = 0.0;
-
-    app.ticker.add((ticker) => {
-        elapsed += ticker.deltaTime;
-        //place(B,A,i1,i2,elapsed);
-        // hat.rotation = elapsed * 0.01;
-        // patch.container.rotation += 0.01;
-        // p2.rotation = elapsed * 0.01
-    });
-*/
 }
 
-
-
-function foo(container, itm) {
-    const {matrix, metatile} = itm;
-    metatile.children.forEach(child => {
-        let g = new PIXI.Graphics(child.shape);
-        g.setFromMatrix(matrix.clone().append(child.matrix));
-        container.addChild(g);
-    });
-
-    /*
-
-            let childObj = child.createObject(app, matrix);
-            c.addChild(childObj);
-        });
-        let bounds = this.bounds;
-        if(bounds) {
-            bounds = bounds.map(p=>matrix.apply(p));
-            let shape = new PIXI.Graphics()
-            shape.moveTo(...coords(bounds[bounds.length-1]));
-            bounds.forEach(p=>shape.lineTo(...coords(p)));
-            shape.stroke({width:1.5, color:0xFF0000});
-            
-            c.addChild(shape);
-        }
-    */
-}

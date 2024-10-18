@@ -462,44 +462,4 @@ function buildScene() {
     */
     // app.stage.addChild(g)
     
-
-    
-    
-    
-    let ring = 0;
-    let k = 1, j = 0;
-    let count = 0;
-    /*
-*/
-
-    /*
-    PIXI.Ticker.shared.add((ticker)=>{
-        let t = performance.now() * 0.001;
-
-        while(ring < 6 && count<Math.exp(t)) {
-            count++;
-            model.place(k,ring,j);
-            model.place(m+k,ring,j);
-            if(ring==0) {
-                k++;
-                if(k>=m) {k=0; ring++;}
-            } else {
-                j++;
-                if(j>ring*2) {
-                    j=0; k++;
-                    if(k>=m) {
-                        ring++;
-                        k=j=0;
-                    }
-                }
-            }
-            if(ring == 6) console.log("stopped:", model.items.length);
-            
-        }
-        
-
-        
-
-    })
-    */
 }

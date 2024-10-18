@@ -131,9 +131,6 @@ class Act1 extends Act {
         let model = this.model;
         let unit = slide.reptile.unit;
         let g = model.createTiling(7, 32);
-        // model.placeRecursively(8, new PIXI.Matrix().scale(64,64));
-
-        // model.placeRecursively(8, new PIXI.Matrix().translate(unit/2,unit/2).scale(64,64).translate(0.5,0.5));    
     }
 }
 

@@ -172,23 +172,6 @@ class WangSet {
         this.curLine = [];
     }
 
-    /*
-    firstLine(x,y,colors,s0) {
-        const d = 40;
-        let L = [];
-        let prevTile = this.findTile(colors.at(-1),s0);
-        let g = this.placeTile(prevTile, x+d*(colors.length-1),y, this.container);
-        L.push({g,tile:prevTile});        
-        for(let i = colors.length-2; i>=0; i--) {
-            let tile = this.findTile(colors[i], prevTile.colors[3]);
-            g = this.placeTile(tile, x+d*i, y, this.container);
-            L.push({g, tile});
-            prevTile = tile;
-        }
-        this.lastLine = L.toReversed();
-    }
-    */
-
     step() {
         const d = 40;
         let g, tile;

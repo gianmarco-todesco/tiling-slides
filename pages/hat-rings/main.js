@@ -2,6 +2,10 @@ const slide = {
     name:"hat-rings"    
 }
 
+//
+// troppo lento. non usato nella conferenza
+//
+
 let app;
 
 async function initPixiAndLoadTexture() {
@@ -105,18 +109,7 @@ function buildScene_old() {
     hatShape1 = makeHatShape();
     hatShape2 = makeHatShape2();
 
-    //hatShape2 = makeHatShape2();
-
     let ii = [1,0,4,7,8,2,3,12];
-    /*
-    ii.forEach(i=>{
-        cells[i].createGraphics('red');
-        cells[i].empty = false;
-    })
-    */
-
-    //let boundary = getBoundary(ii.map(i=>cells[i]));
-    //boundary.forEach(c=>c.createGraphics('orange'))
 
     for(let i of [1,7,4,3,12,2,8]) {
         trees1.push(getTree(ii,i))

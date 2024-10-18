@@ -3,6 +3,11 @@ const slide = {
     name:"smaller"    
 }
 
+//
+// non usato nella conferenza
+//
+
+
 async function setup() {
     console.log("qui")
 

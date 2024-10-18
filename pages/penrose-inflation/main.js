@@ -80,97 +80,6 @@ let dot;
 
 function q(p) {dot.position.copyFrom(p)}
 
-function foo2_obsolete(level) {
-    // clear
-    while(app.stage.children.length>0) {
-        app.stage.children.at(-1).destroy();
-    }
-
-    let s = 2; // 0.7;
-    let global = new PIXI.Matrix().scale(s,s).translate(0,-400);
-
-    let patch = buildPatch('tL',1,global);
-    window.patch = patch;
-    patch.placeTiles();
-
-    /* // show connection
-    let g = new PIXI.Graphics();
-    for(let cell of patch.cells) {
-        for(let edge of cell.edges) {
-            if(edge.tween != null) {
-                let p0 = cell.center;
-                let p1 = edge.tween.cell.center;
-                p1 = lerp(p0,p1,0.47);
-                g.moveTo(p0.x,p0.y);
-                g.lineTo(p1.x,p1.y);
-                g.stroke({color:'red', width:3})
-            }            
-        }
-    }
-    app.stage.addChild(g);
-    */
-
-    /* // show border
-    let g2 = new PIXI.Graphics();
-    for(let i=0; i<3; i++) {
-        let color = ['red','green','blue'][i];
-        for(let edge of patch.edges[i]) {
-            let pa = edge.pa;
-            let pb = edge.pb;
-            let c = lerp(pa,pb,0.5);
-            let v = pb.subtract(pa);
-            let pc = c.add(new PIXI.Point(-v.y,v.x).multiplyScalar(0.2));
-            g2.poly([pa,pc,lerp(pc,pb,0.5)], false).stroke(color)
-        }
-    }
-    app.stage.addChild(g2);
-    */
-   /*
-    let g2 = new PIXI.Graphics();
-    for(let i=0; i<3; i++) {
-        for(let edge of patch.edges[i]) {
-            if(edge.i != 0) continue;
-            let pa = edge.pa;
-            let pb = edge.pb;
-            let c = lerp(pa,pb,0.5);
-            let v = pb.subtract(pa);
-            let pc = c.add(new PIXI.Point(-v.y,v.x).multiplyScalar(0.2));
-            g2.poly([pa,pc,lerp(pc,pb,0.5)], false).stroke('black')
-
-            if(edge.cell.key == "TL") {
-                let g3 = new PIXI.Graphics(TRprotoTile);
-                let matrix = getFourPointsTransform(
-                    TRpts[1], TRpts[2],
-                    pa,pb
-                );
-                g3.alpha = 0.2;
-                g3.setFromMatrix(matrix);
-                app.stage.addChild(g3);
-            } else if(edge.cell.key == "TR") {
-                let g3 = new PIXI.Graphics(TLprotoTile);
-                let matrix = getFourPointsTransform(
-                    TLpts[1], TLpts[2],
-                    pb,pa
-                );
-                g3.alpha = 0.2;
-                g3.setFromMatrix(matrix);
-                app.stage.addChild(g3);
-            }
-        }
-    }
-    app.stage.addChild(g2);
-    */
-
-    // dot = addDot({x:0,y:0});
-
-
-/*
-    let L = build2(1,level,global);
-    L.forEach(itm=>itm.placeTile())
-    window.L = L;
-*/
-}
-
 function createRhomb(tT, level) {
     let container = new PIXI.Container();
 
@@ -213,10 +122,7 @@ function createRhomb(tT, level) {
 let c1, c2;
 
 function buildScene() {
-    
-
     foo(0)
-    // foo2(1);
 }
 
 function foo(level) {

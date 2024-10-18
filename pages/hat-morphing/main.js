@@ -199,11 +199,6 @@ class Act1 extends Act {
         if(this.g) { this.g.destroy(); this.g = null; }
     }
     setLetters(pts) {
-        //if(this.value < 0.2 || this.value > 0.8) {
-        //    this.letters.forEach(letter=>letter.visible=false)
-        //    return;
-        //}
-        //console.log(this.letters.length)
         for(let i = 0; i<pts.length; i++) {
             let p1 = pts[i];
             let p2 = pts[(i+1)%pts.length];
@@ -404,59 +399,9 @@ class Act2 extends Act {
 
 function buildScene() {
     model = h7h8(4);
-    // model.setAb(0.5);
-
-
-    //painter = new Painter2(model);
     director = new Director(model)
     director.addAct(new Act1())
     director.addAct(new Act2())
     director.enablePointer();
-    //painter.paint(0.5);
-
-    /*
-    PIXI.Ticker.shared.add((ticker)=>{
-        let value = 0.5+0.5*Math.sin(performance.now()*0.001);
-        // painter.paint(value);
-        // foo()
-    });
-    */
-    return;
-
-
-    painter = new Painter(model);
-    painter.matrix =  new PIXI.Matrix().scale(10,10);
-    
-
-    let mat2 = new PIXI.Matrix().scale(10,10).translate(0,-150);
-    let pts = model.getPoints(model.pts).map(p=>mat2.apply(p));
-    
-    let g = new PIXI.Graphics().poly(pts,true).fill('red'); app.stage.addChild(g)
-    
-    sc = new ShapeCollector();
-    model.sys.H8.accept(sc);
-
-    sc.shapes.forEach(shape=>{
-        let qs = shape.getPoints().map(p=>painter.matrix.apply(p));
-        if(shape.label == 'flipped')
-        {
-            let j = 1;
-            shape.matrix = getFourPointsFlippedTransform(pts[1],pts[0], qs[12], qs[13]);
-        }
-        else 
-        {
-            shape.matrix = getFourPointsTransform(pts[0],pts[1], qs[0], qs[1]);
-        }
-
-        let g2 = g.clone();
-        g2.setFromMatrix(shape.matrix);
-        app.stage.addChild(g2);
-    })
-    model.sys.H8.accept(painter);
-
-
-
-    
-
 }
 

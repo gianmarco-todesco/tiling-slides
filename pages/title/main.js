@@ -37,15 +37,6 @@ function setup() {
             }
         }
         placeSymbols();
-        /*
-        textLayer = new Layer();        
-        var text = new PointText(new Point(30, 200));
-        text.fontSize = 100;
-        text.fillColor = 'black';
-
-        // Set the content of the text item:
-        text.content = 'Quanta matematica su muri e pavimenti';
-        */
 
         view.onResize = placeSymbols;
 		view.onFrame = function(event) {
