@@ -356,7 +356,8 @@ class PmGroup extends SymmetryGroup {
 class PgGroup extends SymmetryGroup {
     constructor() {
         super();
-        this.setVectors([200,0], [0,150]);
+        //this.setVectors([200,0], [0,150]); // 150
+        this.setVectors([0,250], [400,0]); 
         this.foundamentalDomain = [-1,-1, 1,-1, -1,0,1,0];
         this.generatorSymbols = [
             ["G",0,0,0,0.5],

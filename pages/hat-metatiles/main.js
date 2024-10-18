@@ -352,7 +352,6 @@ function buildScene() {
     console.log("model created in "+dt+"ms");
 
     director = new Director(model);
-    director.addAct(new Act3());
     director.addAct(new Act1());
     // director.addAct(new Act2());
     director.addAct(new Act3());
